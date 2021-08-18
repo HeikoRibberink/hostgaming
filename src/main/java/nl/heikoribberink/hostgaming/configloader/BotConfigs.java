@@ -1,6 +1,13 @@
 package nl.heikoribberink.hostgaming.configloader;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 
 /**
  * Class used for loading and storing bot configurations from and to a file.
@@ -15,20 +22,29 @@ import java.util.Map;
 // hoeft niet persé zo.
 public class BotConfigs {
 
-	public BotConfigs(String fileLocation) {
+	File botConfig;
+	BufferedReader configReader;
 
+	public BotConfigs(String fileLocation) {
+		botConfig = new File(fileLocation);
+		try {
+			configReader = new BufferedReader(new FileReader(botConfig));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public String getToken() {
 		return null;
 	}
 
-	public long getGuildId() {
-		return 0l;
-	}
-
-	public long getChannelId() {
-		return 0l;
+	public long getChannelId() throws IOException {
+		String id = null;
+		configReader.skip(13);
+		for(int i = 0; i < 18; i++){
+			id += configReader.read();
+		}
+		return Long.parseLong(id);
 	}
 
 	public Map<String, Integer> getKeyMappings() {
