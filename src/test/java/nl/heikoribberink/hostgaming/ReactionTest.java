@@ -61,7 +61,7 @@ public class ReactionTest {
 		}).subscribe(event -> {
 			if (event.getEmoji().asUnicodeEmoji().get().getRaw().equals(thumbsup)) {
 				event.getChannel().subscribe(channel -> {
-					channel.createMessage("Thanks!").subscribe();
+					channel.createMessage("Thanks <@" + event.getUserId().asString() + ">!").subscribe();
 				});
 			}
 		}, error -> error.printStackTrace());
