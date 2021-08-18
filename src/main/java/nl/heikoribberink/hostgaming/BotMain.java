@@ -9,5 +9,7 @@ public class BotMain {
 		DiscordClient client = DiscordClient.create(token);
 		GatewayDiscordClient gateway = client.login().block();
 		
+		
+		
 	}
 }
