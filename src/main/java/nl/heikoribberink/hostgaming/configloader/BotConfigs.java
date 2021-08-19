@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -23,12 +24,18 @@ public class BotConfigs {
 
 	File botConfig;
 	BufferedReader configReader;
+	long ChannelId;
 
 	public BotConfigs(String fileLocation) {
 		botConfig = new File(fileLocation);
 		try {
 			configReader = new BufferedReader(new FileReader(botConfig));
 		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		try {
+			ChannelId = getChannelId();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
@@ -38,35 +45,40 @@ public class BotConfigs {
 	}
 
 	public long getChannelId() throws IOException {
-		boolean stop = false;
-		String line = configReader.readLine();
-		String id = null;
-		if(line.substring(0, 9).equals("channel_id")){
-			configReader.skip(10);
-			while(true){
-				char character = (char) configReader.read();
-				if(Character.isDigit(character)){
-					id += character;
-				}
-				if(character == '\n'){
-					break;
-				}
-				if((int) character == -1){
-					stop = true;
+		ArrayList<String> lines = new ArrayList<String>();
+		while(true){
+			String line = configReader.readLine();
+			if(line != null){
+				lines.add(line);
+			}
+			else{
+				break;
+			}
+		}
+		
+		int ChannelIdIndex = 0;
+		for(int i = 0; i < lines.size(); i++){
+			if(lines.get(i).contains("channel_id")){
+				ChannelIdIndex = i+1;
+			}
+		}
+		if(ChannelIdIndex == 0){
+			System.out.println("no ChannelId specified");
+			return 0;
+		}
+		else{
+			String id = null;	
+			String line = lines.get(ChannelIdIndex - 1);
+			for(int i = 0; i < line.length(); i++){
+				if(Character.isDigit(line.charAt(i)) ){
+					id += line.charAt(i);
 				}
 			}
 			if(id == null){
-				System.out.println("no ChannelId found");
+				System.out.println("channel_id found, but no id specified");
 			}
-			else{
-				return Long.parseLong(id);
-			}
+			return Long.parseLong(id);
 		}
-		else if(stop == false){
-			getChannelId();
-		}
-		System.out.println("no ChannelId line found");
-		return 0;
 	}
 
 	public Map<String, Integer> getKeyMappings() {
