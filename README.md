@@ -9,7 +9,7 @@ The purpose of this project is to code a Discord bot with the following function
 - The bot should be able to recieve a specified range of inputs through Discord from an unlimited number of users and convert them to input events for the application on the host computer.
 - The bot should be safe to run on the host computer **under supervision** of a human. It should not be able to create unspecified input events, and should **ALWAYS** be able to safely be killed.
 - All configuration should be done through configuration files that can be linked to the program through arguments (or another configuration file) for better end-user experience.
--The bot should follow the Reactive Streams specifications.
+- The bot should follow the Reactive Streams specifications.
 
 ---
 
