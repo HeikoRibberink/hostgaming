@@ -68,4 +68,9 @@ public class ReactionTest {
 
 		gateway.onDisconnect().block();
 	}
+
+	@Test
+	public void botTest() {
+		BotMain.botTest(null);
+	}
 }

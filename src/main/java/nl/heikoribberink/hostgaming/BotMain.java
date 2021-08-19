@@ -1,12 +1,12 @@
 package nl.heikoribberink.hostgaming;
 
 import java.awt.AWTException;
+import java.awt.GraphicsEnvironment;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
+import java.io.Console;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,7 +16,6 @@ import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.core.object.reaction.Reaction;
 import discord4j.core.object.reaction.ReactionEmoji;
 import nl.heikoribberink.hostgaming.configloader.BotConfigs;
 import reactor.core.publisher.Flux;
@@ -29,7 +28,20 @@ import reactor.core.publisher.Mono;
  */
 public class BotMain {
 	public static void main(String[] args) {
-		start(null);
+
+	}
+
+	private static void start(BotConfigs botConfigs) {
+		final String token = /*botConfigs.getToken()*/ "ODc3NDY3ODAzMzkxNzY2NTQ5.YRzDkg.lHu3MzOtFTN3peJdgGZ5astta9s";
+		final long channelId = /*botConfigs.getChannelId()*/ 806105311344853063l;
+		final List<Long> whitelist = /*botConfigs.getWhitelistedUsers()*/ List.of(465810891997315083l, 538659433014886412l, 621609207766188042l);
+		final Map<String, Integer> keybinds = /*botConfigs.getKeyMappings()*/ Map.of("👍", KeyEvent.VK_W);
+		final int maxInputs = /*botConfigs.getMaxInputs()*/ 1, minVotes = /*botConfigs.getMinVotes()*/ 1;
+
+		DiscordClient client = DiscordClient.create(token);
+		GatewayDiscordClient gateway = client.login().block();
+
+
 
 	}
 
@@ -38,7 +50,7 @@ public class BotMain {
 	 * @param botConfigs - The {@link BotConfigs} object needed to initialize the
 	 *                   bot.
 	 */
-	private static void start(BotConfigs botConfigs) {
+	public static void botTest(BotConfigs botConfigs) {
 		// Initialize the client and gateway
 
 		// final String token = botConfigs.getToken();
