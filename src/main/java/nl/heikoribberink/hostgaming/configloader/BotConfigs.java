@@ -26,8 +26,7 @@ public class BotConfigs {
 	BufferedReader configReader, KeyReader, WhitelistReader;
 	String Token;
 	long ChannelId;
-	double InputDelay;
-	int MaxInputs, MinVotes;
+	int InputDelay, MaxInputs, MinVotes;
 	Map<String, Integer> KeyMappings;
 	List<Long> WhiteListedUsers;
 
@@ -55,14 +54,10 @@ public class BotConfigs {
 		}
 	}
 
-	public String getToken() {
-		return null;
-	}
-
-	public long getChannelId() throws IOException {
+	public String findValue(String ValueName, BufferedReader reader) throws IOException{
 		ArrayList<String> lines = new ArrayList<String>();
 		while(true){
-			String line = configReader.readLine();
+			String line = reader.readLine();
 			if(line != null){
 				lines.add(line);
 			}
@@ -71,41 +66,53 @@ public class BotConfigs {
 			}
 		}
 		
-		int ChannelIdIndex = 0;
+		int ValueIndex = 0;
 		for(int i = 0; i < lines.size(); i++){
-			if(lines.get(i).contains("channel_id")){
-				ChannelIdIndex = i+1;
+			if(lines.get(i).contains(ValueName)){
+				ValueIndex = i+1;
 			}
 		}
-		if(ChannelIdIndex == 0){
-			System.out.println("no ChannelId specified");
-			return 0;
+		if(ValueIndex == 0){
+			System.out.println("no " + ValueName + " specified");
+			return null;
 		}
 		else{
-			String id = null;	
-			String line = lines.get(ChannelIdIndex - 1);
+			String value = null;	
+			String line = lines.get(ValueIndex - 1);
 			for(int i = 0; i < line.length(); i++){
 				if(Character.isDigit(line.charAt(i)) ){
-					id += line.charAt(i);
+					value += line.charAt(i);
 				}
 			}
-			if(id == null){
-				System.out.println("channel_id found, but no id specified");
+			if(value == null){
+				System.out.println(ValueName + " found, but no id specified");
 			}
-			return Long.parseLong(id);
+			return value;
 		}
 	}
 
-	public double getInputDelay(){
-		return 0;
+	public String getToken() {
+		return null;
 	}
 
-	public int getMaxInputs(){
-		return 0;
+	public long getChannelId() throws IOException {
+		String id = findValue("channel_id", configReader);
+		return Long.parseLong(id);
 	}
 
-	public int getMinVotes(){
-		return 0;
+	public int getInputDelay() throws IOException{
+		String delay = findValue("input_delay", configReader);
+		return Integer.parseInt(delay);
+	}
+
+	public int getMaxInputs() throws IOException{
+		String max_inputs = findValue("max_inputs", configReader);
+		return Integer.parseInt(max_inputs);
+	}
+
+	public int getMinVotes() throws IOException{
+		String min_votes = findValue("min_votes", configReader);
+		return Integer.parseInt(min_votes);
 	}
 
 	public Map<String, Integer> getKeyMappings() {
