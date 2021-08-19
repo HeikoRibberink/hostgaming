@@ -47,7 +47,7 @@ public class BotMain {
 		// final Map<String, Integer> keybinds = botConfigs.getKeyMappings();
 		final String token = "ODc3NDY3ODAzMzkxNzY2NTQ5.YRzDkg.lHu3MzOtFTN3peJdgGZ5astta9s";
 		final long channelId = 806105311344853063l;
-		final List<Long> whitelist = List.of(465810891997315083l);
+		final List<Long> whitelist = List.of(465810891997315083l, 538659433014886412l, 621609207766188042l);
 		final Map<String, Integer> keybinds = Map.of("👍", KeyEvent.VK_W);
 		final int maxInputs = 1, minVotes = 1;
 		DiscordClient client = DiscordClient.create(token);
