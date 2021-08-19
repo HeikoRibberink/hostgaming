@@ -7,12 +7,18 @@ import java.io.InputStream;
 
 import javax.swing.JTextArea;
 
-public class JTextFieldInputStream extends InputStream {
+/**
+ * InputStream for JTextArea.
+ *
+ * @author <a href="https://github.com/HeikoRibberink">Heiko Ribberink</a>
+ */
+public class JTextAreaInputStream extends InputStream {
 	byte[] contents;
 	int pointer = 0;
 
-	public JTextFieldInputStream(final JTextArea text) {
-
+	public JTextAreaInputStream(final JTextArea text) {
+		super();
+		contents = text.getText().getBytes();
 		text.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyReleased(KeyEvent e) {

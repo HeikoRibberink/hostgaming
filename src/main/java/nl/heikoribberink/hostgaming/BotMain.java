@@ -1,10 +1,11 @@
 package nl.heikoribberink.hostgaming;
 
 import java.awt.AWTException;
-import java.awt.GraphicsEnvironment;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
-import java.io.Console;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +19,7 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import nl.heikoribberink.hostgaming.configloader.BotConfigs;
+import nl.heikoribberink.hostgaming.utils.ConsoleWindow;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -28,7 +30,7 @@ import reactor.core.publisher.Mono;
  */
 public class BotMain {
 	public static void main(String[] args) {
-
+		start(null);
 	}
 
 	private static void start(BotConfigs botConfigs) {
@@ -37,12 +39,46 @@ public class BotMain {
 		final List<Long> whitelist = /*botConfigs.getWhitelistedUsers()*/ List.of(465810891997315083l, 538659433014886412l, 621609207766188042l);
 		final Map<String, Integer> keybinds = /*botConfigs.getKeyMappings()*/ Map.of("👍", KeyEvent.VK_W);
 		final int maxInputs = /*botConfigs.getMaxInputs()*/ 1, minVotes = /*botConfigs.getMinVotes()*/ 1;
+		final ConsoleWindow console = new ConsoleWindow("Hosted Gaming Bot Console", 24, 120);
+		System.setOut(console.getOut());
 
 		DiscordClient client = DiscordClient.create(token);
 		GatewayDiscordClient gateway = client.login().block();
 
+		Thread consoleHandler = new Thread(() -> {
+			BufferedReader reader = new BufferedReader(new InputStreamReader(console.getIn()));
+			boolean running = true;
+			String str;
+			while(running) {
+				try {
+					switch (((str = reader.readLine()) != null ? str : "").toLowerCase()) {
+						case "stop":
+							gateway.logout().subscribe();
+							running = false;
+							break;
+					
+						default:
+							break;
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			try {
+				reader.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
+		consoleHandler.start();
 
-
+		gateway.onDisconnect().block();
+		try {
+			consoleHandler.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		console.dispose();
 	}
 
 	/**

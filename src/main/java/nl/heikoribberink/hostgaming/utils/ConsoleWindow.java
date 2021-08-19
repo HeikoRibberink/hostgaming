@@ -20,8 +20,7 @@ import javax.swing.JTextArea;
  * Used for simplifying the creation and use of virtual consoles using
  * {@link javax.swing.JFrame JFrame}.
  * 
- * @author Heiko Ribberink
- *
+ * @author <a href="https://github.com/HeikoRibberink">Heiko Ribberink</a>
  */
 
 public class ConsoleWindow extends JFrame {
@@ -46,11 +45,6 @@ public class ConsoleWindow extends JFrame {
 		setTitle(title);
 		setVisible(true);
 		setLocation(new Point(0, 0));
-
-		// canvas = new Canvas();
-		// canvas.setSize(width, height);
-		// canvas.setFocusable(true);
-		// add(canvas);
 
 		//Output Text Area with scrolling
 		outputArea = new JTextArea(rows, columns);
@@ -87,7 +81,7 @@ public class ConsoleWindow extends JFrame {
 		inputArea.setVisible(true);
 		inputArea.setFocusable(true);
 
-		in = new JTextFieldInputStream(inputArea);
+		in = new JTextAreaInputStream(inputArea);
 
 		add(inputArea, BorderLayout.PAGE_END);
 
