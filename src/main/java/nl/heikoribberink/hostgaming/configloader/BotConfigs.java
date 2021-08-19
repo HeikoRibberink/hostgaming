@@ -22,19 +22,34 @@ import java.util.Map;
 // hoeft niet persé zo.
 public class BotConfigs {
 
-	File botConfig;
-	BufferedReader configReader;
+	File botConfig, KeyConfig, WhiteList;
+	BufferedReader configReader, KeyReader, WhitelistReader;
+	String Token;
 	long ChannelId;
+	double InputDelay;
+	int MaxInputs, MinVotes;
+	Map<String, Integer> KeyMappings;
+	List<Long> WhiteListedUsers;
 
-	public BotConfigs(String fileLocation) {
-		botConfig = new File(fileLocation);
+	public BotConfigs(String ConfigLocation, String KeyLocation, String WhitelistLocation) {
+		botConfig = new File(ConfigLocation);
+		KeyConfig = new File(KeyLocation);
+		WhiteList = new File(WhitelistLocation);
 		try {
 			configReader = new BufferedReader(new FileReader(botConfig));
+			KeyReader = new BufferedReader(new FileReader(KeyConfig));
+			WhitelistReader = new BufferedReader(new FileReader(WhiteList));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
 		try {
+			Token = getToken();
 			ChannelId = getChannelId();
+			InputDelay = getInputDelay();
+			MaxInputs = getMaxInputs();
+			MinVotes = getMinVotes();
+			KeyMappings = getKeyMappings();
+			WhiteListedUsers = getWhitelistedUsers();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -79,6 +94,18 @@ public class BotConfigs {
 			}
 			return Long.parseLong(id);
 		}
+	}
+
+	public double getInputDelay(){
+		return 0;
+	}
+
+	public int getMaxInputs(){
+		return 0;
+	}
+
+	public int getMinVotes(){
+		return 0;
 	}
 
 	public Map<String, Integer> getKeyMappings() {
