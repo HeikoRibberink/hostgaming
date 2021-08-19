@@ -1,13 +1,12 @@
 package nl.heikoribberink.hostgaming.configloader;
 
-import java.util.Map;
 import java.io.BufferedReader;
-import java.io.CharArrayReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Class used for loading and storing bot configurations from and to a file.
@@ -71,6 +70,10 @@ public class BotConfigs {
 	}
 
 	public Map<String, Integer> getKeyMappings() {
+		return null;
+	}
+
+	public List<Long> getWhitelistedUsers() {
 		return null;
 	}
 }
