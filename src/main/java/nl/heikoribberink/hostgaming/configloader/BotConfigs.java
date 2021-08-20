@@ -68,7 +68,7 @@ public class BotConfigs {
 		
 		int ValueIndex = 0;
 		for(int i = 0; i < lines.size(); i++){
-			if(lines.get(i).contains(ValueName)){
+			if(lines.get(i).contains(ValueName.toLowerCase())){
 				ValueIndex = i+1;
 			}
 		}
