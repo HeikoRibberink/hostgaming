@@ -54,7 +54,11 @@ public class BotConfigs {
 		}
 	}
 
-	public String findValue(String ValueName, BufferedReader reader) throws IOException{
+	/*
+		general function for getting a value from a file
+		mode == true is for numbers, mode == false is for numbers and characters
+	*/
+	public String findValue(String ValueName, BufferedReader reader, boolean mode) throws IOException{
 		ArrayList<String> lines = new ArrayList<String>();
 		while(true){
 			String line = reader.readLine();
@@ -80,8 +84,15 @@ public class BotConfigs {
 			String value = null;	
 			String line = lines.get(ValueIndex - 1);
 			for(int i = 0; i < line.length(); i++){
-				if(Character.isDigit(line.charAt(i)) ){
-					value += line.charAt(i);
+				if(mode){
+					if(Character.isDigit(line.charAt(i)) ){
+						value += line.charAt(i);
+					}
+				}
+				else{
+					if(line.charAt(i) != '=' && i > (line.indexOf(ValueName) + ValueName.length()) ){
+						value += line.charAt(i);
+					}
 				}
 			}
 			if(value == null){
@@ -91,27 +102,28 @@ public class BotConfigs {
 		}
 	}
 
-	public String getToken() {
-		return null;
+	public String getToken() throws IOException {
+		String token = findValue("token", configReader, false);
+		return token;
 	}
 
 	public long getChannelId() throws IOException {
-		String id = findValue("channel_id", configReader);
+		String id = findValue("channel_id", configReader, true);
 		return Long.parseLong(id);
 	}
 
 	public int getInputDelay() throws IOException{
-		String delay = findValue("input_delay", configReader);
+		String delay = findValue("input_delay", configReader, true);
 		return Integer.parseInt(delay);
 	}
 
 	public int getMaxInputs() throws IOException{
-		String max_inputs = findValue("max_inputs", configReader);
+		String max_inputs = findValue("max_inputs", configReader, true);
 		return Integer.parseInt(max_inputs);
 	}
 
 	public int getMinVotes() throws IOException{
-		String min_votes = findValue("min_votes", configReader);
+		String min_votes = findValue("min_votes", configReader, true);
 		return Integer.parseInt(min_votes);
 	}
 
