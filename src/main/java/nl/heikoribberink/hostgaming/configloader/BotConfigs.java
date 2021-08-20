@@ -24,8 +24,8 @@ public class BotConfigs {
 
 	File botConfig, KeyConfig, WhiteList;
 	BufferedReader configReader, KeyReader, WhitelistReader;
-	String Token;
-	long ChannelId;
+	String Token, EventTitle;
+	long ChannelId, Host;
 	int InputDelay, MaxInputs, MinVotes;
 	Map<String, Integer> KeyMappings;
 	List<Long> WhiteListedUsers;
@@ -43,7 +43,9 @@ public class BotConfigs {
 		}
 		try {
 			Token = getToken();
+			EventTitle = getEventTitle();
 			ChannelId = getChannelId();
+			Host = getHost();
 			InputDelay = getInputDelay();
 			MaxInputs = getMaxInputs();
 			MinVotes = getMinVotes();
@@ -125,6 +127,14 @@ public class BotConfigs {
 	public int getMinVotes() throws IOException{
 		String min_votes = findValue("min_votes", configReader, true);
 		return Integer.parseInt(min_votes);
+	}
+
+	public long getHost(){
+		return 0l;
+	}
+
+	public String getEventTitle(){
+		return null;
 	}
 
 	public Map<String, Integer> getKeyMappings() {
