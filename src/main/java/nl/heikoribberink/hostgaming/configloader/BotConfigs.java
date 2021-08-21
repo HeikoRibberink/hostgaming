@@ -30,10 +30,10 @@ public class BotConfigs {
 	Map<String, Integer> KeyMappings;
 	List<Long> WhiteListedUsers;
 
-	public BotConfigs(String ConfigLocation, String KeyLocation, String WhitelistLocation) {
+	public BotConfigs(String ConfigLocation) {
 		botConfig = new File(ConfigLocation);
-		KeyConfig = new File(KeyLocation);
-		WhiteList = new File(WhitelistLocation);
+		KeyConfig = new File(getKeyPath());
+		WhiteList = new File(getWhiteListPath());
 		try {
 			configReader = new BufferedReader(new FileReader(botConfig));
 			KeyReader = new BufferedReader(new FileReader(KeyConfig));
@@ -102,6 +102,16 @@ public class BotConfigs {
 			}
 			return value;
 		}
+	}
+
+	public String getKeyPath() throws IOException{
+		String path = findValue("keypath", configReader, false);
+		return path;
+	}
+
+	public String getWhiteListPath() throws IOException{
+		String path = findValue("whitelistpath", configReader, false);
+		return path;
 	}
 
 	public String getToken() throws IOException {
