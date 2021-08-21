@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
@@ -18,6 +19,8 @@ import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.gateway.intent.Intent;
+import discord4j.gateway.intent.IntentSet;
 import nl.heikoribberink.hostgaming.configloader.BotConfigs;
 import nl.heikoribberink.hostgaming.utils.ConsoleWindow;
 import reactor.core.publisher.Flux;
@@ -30,96 +33,158 @@ import reactor.core.publisher.Mono;
  */
 public class BotMain {
 	public static void main(String[] args) {
-		start(null);
+		try {
+			start(null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
-	private static void start(BotConfigs botConfigs) {
-		final String token = /*botConfigs.getToken()*/ "ODc3NDY3ODAzMzkxNzY2NTQ5.YRzDkg.lHu3MzOtFTN3peJdgGZ5astta9s";
-		final long channelId = /*botConfigs.getChannelId()*/ 806105311344853063l;
-		final List<Long> whitelist = /*botConfigs.getWhitelistedUsers()*/ List.of(465810891997315083l, 538659433014886412l, 621609207766188042l);
-		final Map<String, Integer> keybinds = /*botConfigs.getKeyMappings()*/ Map.of("👍", KeyEvent.VK_W);
-		final int maxInputs = /*botConfigs.getMaxInputs()*/ 1, minVotes = /*botConfigs.getMinVotes()*/ 1;
+	private static volatile boolean RUNNING = false;
+	private static volatile boolean IN_EVENT = false;
+
+	private static Runnable eventRunnable;
+	private static Thread eventThread;
+
+	private static void start(BotConfigs configs) throws Exception {
+		final String token = /* configs.getToken() */ "ODc3NDY3ODAzMzkxNzY2NTQ5.YRzDkg.lHu3MzOtFTN3peJdgGZ5astta9s";
 		final ConsoleWindow console = new ConsoleWindow("Hosted Gaming Bot Console", 24, 120);
 		System.setOut(console.getOut());
 
-		DiscordClient client = DiscordClient.create(token);
-		GatewayDiscordClient gateway = client.login().block();
+		final DiscordClient client = DiscordClient.create(token);
+		IntentSet intents = IntentSet.of(Intent.GUILD_MESSAGES, Intent.GUILD_MESSAGE_REACTIONS,
+				Intent.GUILD_MESSAGE_TYPING, Intent.DIRECT_MESSAGES, Intent.DIRECT_MESSAGE_REACTIONS);
+		client.gateway().setEnabledIntents(intents);
+		client.gateway().setDisabledIntents(intents.not());
+		final GatewayDiscordClient gateway = client.login().block();
 
-		Thread consoleHandler = new Thread(() -> {
-			BufferedReader reader = new BufferedReader(new InputStreamReader(console.getIn()));
-			boolean running = true;
-			String str;
-			while(running) {
-				try {
-					switch (((str = reader.readLine()) != null ? str : "").toLowerCase()) {
-						case "stop":
-							gateway.logout().subscribe();
-							running = false;
-							break;
-					
-						default:
-							break;
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
+		gateway.onDisconnect().subscribe(ctx -> {
+			RUNNING = false;
+			IN_EVENT = false;
+		});
+
+		eventRunnable = () -> {
 			try {
-				reader.close();
-			} catch (IOException e) {
+				runEvent(gateway, configs);
+			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		});
-		consoleHandler.start();
+		};
 
-		gateway.onDisconnect().block();
-		try {
-			consoleHandler.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		RUNNING = true;
+		handleConsole(console, gateway);
+
 		console.dispose();
 	}
 
-	/**
-	 * 
-	 * @param botConfigs - The {@link BotConfigs} object needed to initialize the
-	 *                   bot.
-	 */
-	public static void botTest(BotConfigs botConfigs) {
-		// Initialize the client and gateway
+	private static void handleConsole(final ConsoleWindow console, final GatewayDiscordClient gateway) {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(console.getIn()));
+		String str;
+		while (RUNNING) {
+			try {
+				switch (((str = reader.readLine()) != null ? str : "").toLowerCase()) { // Makes sure str is never
+																						// null
+				case "start":
+					start();
+					break;
 
-		// final String token = botConfigs.getToken();
-		// final long channelId = botConfigs.getChannelId();
-		// final List<Long> whitelist = botConfigs.getWhitelistedUsers();
-		// final Map<String, Integer> keybinds = botConfigs.getKeyMappings();
-		final String token = "ODc3NDY3ODAzMzkxNzY2NTQ5.YRzDkg.lHu3MzOtFTN3peJdgGZ5astta9s";
-		final long channelId = 806105311344853063l;
-		final List<Long> whitelist = List.of(465810891997315083l, 538659433014886412l, 621609207766188042l);
-		final Map<String, Integer> keybinds = Map.of("👍", KeyEvent.VK_W);
-		final int maxInputs = 1, minVotes = 1;
-		DiscordClient client = DiscordClient.create(token);
-		GatewayDiscordClient gateway = client.login().block();
+				case "stop":
+					stop();
+					break;
 
-		// Send a "Inputs" message to the specified channel.
-		MessageChannel msgChannel = (MessageChannel) gateway.getChannelById(Snowflake.of(channelId)).block();
-		Message msg = msgChannel.createMessage("Inputs").block();
-		msg.addReaction(ReactionEmoji.unicode("👍")).block();
+				case "exit":
+					exit(gateway);
+					break;
+
+				default:
+					break;
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 		try {
-			Thread.sleep(5000);
+			reader.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void exit(final GatewayDiscordClient gateway) {
+		if (IN_EVENT)
+			return;
+		RUNNING = false;
+		gateway.logout().subscribe();
+	}
+
+	private static void start() {
+		if (IN_EVENT)
+			return;
+		IN_EVENT = true;
+		eventThread = new Thread(eventRunnable);
+		eventThread.start();
+	}
+
+	private static void stop() {
+		IN_EVENT = false;
+		if (eventThread == null)
+			return;
+		try {
+			eventThread.join();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		msg = msg.getClient().getMessageById(msg.getChannelId(), msg.getId()).block();
+	}
 
-		countVotes(msg, keybinds, whitelist)
-				.subscribe(map -> {
-					System.out.println(map.toString());
-					issueInputs(chooseVotes(map, maxInputs, minVotes), keybinds, 100);
-					gateway.logout().block();
-				});
+	private static void runEvent(final GatewayDiscordClient gateway, final BotConfigs configs)
+			throws InterruptedException {
+		final long channelId = 878612609702699022l;
+		final List<Long> whitelist = null;
+		final Map<String, Integer> keybinds = Map.of("⬆️", KeyEvent.VK_W, "⬇️", KeyEvent.VK_S, "⬅️", KeyEvent.VK_A,
+				"➡️", KeyEvent.VK_D);
+		final List<String> reactions = List.of("⬅️", "⬆️", "⬇️", "➡️");
+		final int maxInputs = 4, minVotes = 2;
+		final long delay = 0;
+		final Snowflake host = Snowflake.of(465810891997315083l);
+		final String title = "Testing HostedGaming bot.";
 
-		gateway.onDisconnect().block();
+		final MessageChannel msgChannel = (MessageChannel) gateway.getChannelById(Snowflake.of(channelId)).block();
+		final String startupContent = "Starting '" + title + "' hosted by <@" + host.asLong() + ">!";
+		final Message msg = msgChannel.createMessage(startupContent).block();
+		System.out.println("Starting countdown.");
+		int countdown = 3;
+		while (IN_EVENT && countdown >= 1) {
+			final int whyisthisnecessary = countdown;
+			msg.edit(msgEdit -> {
+				msgEdit.setContent(startupContent + " \n in " + whyisthisnecessary + " seconds.");
+			}).subscribe();
+			System.out.println("Starting in " + countdown + " seconds.");
+			Thread.sleep(1000);
+			countdown--;
+		}
+		if (IN_EVENT) {
+			msg.edit(msgEdit -> {
+				msgEdit.setContent("**INPUTS**");
+			}).block();
+			for (String reaction : reactions) {
+				msg.addReaction(ReactionEmoji.unicode(reaction)).subscribe();
+			}
+		}
+		while (IN_EVENT) {
+			Thread.sleep(delay);
+			Message updatedMsg = msg.getClient().getMessageById(msg.getChannelId(), msg.getId()).block();
+			countVotes(updatedMsg, keybinds, whitelist).subscribe(map -> {
+				long s = System.currentTimeMillis();
+				Map<String, Long> temp;
+				issueInputs(chooseVotes(temp = transferItemsAndWait(map), maxInputs, minVotes), keybinds, 1000);
+				System.out.println(temp.values().toString());
+				System.out.println("issueInputs & chooseVotes & transferItems: " + (System.currentTimeMillis() - s));
+			});
+		}
+		msg.removeAllReactions().subscribe();
+		msg.edit(msgEdit -> {
+			msgEdit.setContent("**Event has ended!** \n Thanks for participating.");
+		}).block();
 	}
 
 	/**
@@ -128,16 +193,17 @@ public class BotMain {
 	 * @param msg       - The {@link Message} of which the reactions must be
 	 *                  counted.
 	 * @param keybinds  - The bounded emoji's to filter for.
-	 * @param whitelist - The id's whitelisted users.
+	 * @param whitelist - The id's of whitelisted users. Set to null to disable
+	 *                  whitelist.
 	 * @return A map containing the number of reactions per bounded emoji, filtered
 	 *         for whitelisted users.
 	 */
 
-	public static Mono<Map<String, Long>> countVotes(Message msg, Map<String, Integer> keybinds, List<Long> whitelist) {
+	public static Mono<Map<String, Mono<Long>>> countVotes(Message msg, Map<String, Integer> keybinds, List<Long> whitelist) {
 
 		// Retrieve all messages, count and store them per emoji filtering the
 		// whitelisted users.
-		Mono<Map<String, Long>> counts = Flux.fromStream(msg.getReactions().stream()).filter(reaction -> {
+		Mono<Map<String, Mono<Long>>> counts = Flux.fromStream(msg.getReactions().stream()).filter(reaction -> {
 			return reaction.getEmoji().asUnicodeEmoji().isPresent(); // All emoji's without a Unicode type aren't
 																		// supported.
 		}).filter(reaction -> {
@@ -146,9 +212,14 @@ public class BotMain {
 		}).collectMap(reaction -> {
 			return reaction.getEmoji().asUnicodeEmoji().get().getRaw(); // Key is unicode name.
 		}, reaction -> {
-			return msg.getReactors(reaction.getEmoji()).filter(user -> { // Filter for whitelisted users.
+			Mono<Long> l = msg.getReactors(reaction.getEmoji()).filter(user -> { // Filter for whitelisted users.
+				if (whitelist == null)
+					return true;
 				return whitelist.contains(user.getId().asLong());
-			}).count().block(); // Value is count.
+			}).count(); // Value is count.
+			// Mono<Long> out = l.cache();
+			// return out;
+			return l;
 		});
 		return counts;
 	}
@@ -176,17 +247,34 @@ public class BotMain {
 			Robot robot;
 			try {
 				robot = new Robot();
+				for (Integer key : keybinds.values()) {
+					robot.keyRelease(key);
+				}
 				for (String key : inputs) {
 					robot.keyPress(keybinds.get(key));
 				}
-				Thread.sleep(length);
-				for (String key : inputs) {
-					robot.keyRelease(keybinds.get(key));
-				}
-			} catch (AWTException | InterruptedException e) {
+			} catch (AWTException e) {
 				e.printStackTrace();
 			}
 		});
 		thread.start();
 	}
+
+	private static Map<String, Long> transferItemsAndWait(Map<String, Mono<Long>> in) {
+		ConcurrentHashMap<String, Long> out = new ConcurrentHashMap<String, Long>(in.size());
+		for (Entry<String, Mono<Long>> entry : in.entrySet()) {
+			entry.getValue().subscribe(ctx -> {
+				out.put(entry.getKey(), ctx);
+			});
+		}
+		while(out.size() < in.size()) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		return out;
+	}
+
 }
