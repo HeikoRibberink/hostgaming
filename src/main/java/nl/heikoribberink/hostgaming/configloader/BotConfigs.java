@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 
+import io.netty.channel.ChannelId;
+
 /**
  * Class used for loading and storing bot configurations from and to a file.
  * 
@@ -153,5 +155,52 @@ public class BotConfigs {
 
 	public List<Long> getWhitelistedUsers() {
 		return null;
+	}
+
+	//		Token = getToken();
+	//		EventTitle = getEventTitle();
+	//		ChannelId = getChannelId();
+	//		Host = getHost();
+	//		InputDelay = getInputDelay();
+	//		MaxInputs = getMaxInputs();
+	//		MinVotes = getMinVotes();
+	//		KeyMappings = getKeyMappings();
+	//		WhiteListedUsers = getWhitelistedUsers();
+
+	//variable getters
+	public String TokenGet(){
+		return Token;
+	}
+
+	public String EventTitleGet(){
+		return EventTitle;
+	}
+
+	public long ChannelIdGet(){
+		return ChannelId;
+	}
+
+	public long HostGet(){
+		return Host;
+	}
+
+	public int InputDelayGet(){
+		return InputDelay;
+	}
+
+	public int MaxInputsGet(){
+		return MaxInputs;
+	}
+
+	public int MinVotesGet(){
+		return MinVotes;
+	}
+
+	public Map<String, Integer> KeyMappingsGet(){
+		return KeyMappings;
+	}
+
+	public List<Long> WhiteListedUsersGet(){
+		return WhiteListedUsers;
 	}
 }
