@@ -33,6 +33,8 @@ import reactor.core.publisher.Mono;
  */
 public class BotMain {
 	public static void main(String[] args) {
+		String tests = "C:\\Users\\Gebruiker\\Documents\\overig\\Programmeren\\Java\\Discord\\HostGaming\\hostgaming\\src\\test\\java\\nl\\heikoribberink\\hostgaming";
+		BotConfigs configs = new BotConfigs(tests + "\\Minecraft.hg.conf", tests + "\\MinecraftKeys.hg.conf", tests + "\\Whitelist.txt");
 		try {
 			start(null);
 		} catch (Exception e) {
@@ -47,7 +49,7 @@ public class BotMain {
 	private static Thread eventThread;
 
 	private static void start(BotConfigs configs) throws Exception {
-		final String token = /* configs.getToken() */ "ODc3NDY3ODAzMzkxNzY2NTQ5.YRzDkg.lHu3MzOtFTN3peJdgGZ5astta9s";
+		final String token = /*configs.getToken()*/ "ODc3NDY3ODAzMzkxNzY2NTQ5.YRzDkg.lHu3MzOtFTN3peJdgGZ5astta9s";
 		final ConsoleWindow console = new ConsoleWindow("Hosted Gaming Bot Console", 24, 120);
 		System.setOut(console.getOut());
 
@@ -66,7 +68,7 @@ public class BotMain {
 		eventRunnable = () -> {
 			try {
 				runEvent(gateway, configs);
-			} catch (InterruptedException e) {
+			} catch (InterruptedException | IOException e) {
 				e.printStackTrace();
 			}
 		};
@@ -137,14 +139,14 @@ public class BotMain {
 	}
 
 	private static void runEvent(final GatewayDiscordClient gateway, final BotConfigs configs)
-			throws InterruptedException {
-		final long channelId = 878612609702699022l;
+			throws InterruptedException, IOException {
+		final long channelId = /*configs.getChannelId()*/ 878612609702699022l;
 		final List<Long> whitelist = null;
 		final Map<String, Integer> keybinds = Map.of("⬆️", KeyEvent.VK_W, "⬇️", KeyEvent.VK_S, "⬅️", KeyEvent.VK_A,
 				"➡️", KeyEvent.VK_D);
 		final List<String> reactions = List.of("⬅️", "⬆️", "⬇️", "➡️");
-		final int maxInputs = 4, minVotes = 2;
-		final long delay = 0;
+		final int maxInputs = /*configs.getMaxInputs()*/ 4, minVotes = /*configs.getMaxInputs()*/ 2;
+		final long delay = /*configs.getInputDelay()*/ 0;
 		final Snowflake host = Snowflake.of(465810891997315083l);
 		final String title = "Testing HostedGaming bot.";
 
