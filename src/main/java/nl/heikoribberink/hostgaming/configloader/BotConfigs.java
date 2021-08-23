@@ -2,7 +2,6 @@ package nl.heikoribberink.hostgaming.configloader;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
@@ -33,14 +32,13 @@ public class BotConfigs {
 	public BotConfigs(String ConfigLocation) {
 		try {
 			botConfig = new File(ConfigLocation);
-			KeyConfig = new File(getKeyPath());
-			WhiteList = new File(getWhiteListPath());
 			configReader = new BufferedReader(new FileReader(botConfig));
-			KeyReader = new BufferedReader(new FileReader(KeyConfig));
-			WhitelistReader = new BufferedReader(new FileReader(WhiteList));
-
 			ConfigLines = getLines(configReader);
+			KeyConfig = new File(getKeyPath());
+			KeyReader = new BufferedReader(new FileReader(KeyConfig));
 			KeyLines = getLines(KeyReader);
+			WhiteList = new File(getWhiteListPath());
+			WhitelistReader = new BufferedReader(new FileReader(WhiteList));
 			WhiteListLines = getLines(WhitelistReader);
 
 			Token = getToken();
@@ -55,7 +53,7 @@ public class BotConfigs {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
+		System.out.println(ChannelIdGet());
 	}
 
 	//function for converting a file to String form
@@ -111,7 +109,7 @@ public class BotConfigs {
 	}
 
 	public String getKeyPath() throws IOException{
-		String path = findValue("keypath", ConfigLines,false);
+		String path = findValue("keypath", ConfigLines, false);
 		return path;
 	}
 
@@ -127,6 +125,7 @@ public class BotConfigs {
 
 	public long getChannelId() throws IOException {
 		String id = findValue("channel_id", ConfigLines, true);
+		System.out.println(Long.parseLong(id));
 		return Long.parseLong(id);
 	}
 
