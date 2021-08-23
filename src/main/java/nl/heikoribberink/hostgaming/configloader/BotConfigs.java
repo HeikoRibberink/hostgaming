@@ -8,9 +8,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-
-import io.netty.channel.ChannelId;
-
 /**
  * Class used for loading and storing bot configurations from and to a file.
  * 
@@ -26,7 +23,7 @@ public class BotConfigs {
 
 	private File botConfig, KeyConfig, WhiteList;
 	private BufferedReader configReader, KeyReader, WhitelistReader;
-	ArrayList<String> ConfigLines, KeyLines, WhiteListLines;
+	private ArrayList<String> ConfigLines, KeyLines, WhiteListLines;
 	private String Token, EventTitle;
 	private long ChannelId, Host;
 	private int InputDelay, MaxInputs, MinVotes;
@@ -89,8 +86,7 @@ public class BotConfigs {
 			}
 		}
 		if(ValueIndex == 0){
-			System.out.println("no " + ValueName + " specified");
-			return null;
+			throw new NullPointerException("no " + ValueName + " specified");
 		}
 		else{
 			String value = null;	
@@ -108,7 +104,7 @@ public class BotConfigs {
 				}
 			}
 			if(value == null){
-				System.out.println(ValueName + " found, but no id specified");
+				throw new NullPointerException(ValueName + " found, but no id specified");
 			}
 			return value;
 		}
@@ -164,7 +160,7 @@ public class BotConfigs {
 	public List<Long> getWhitelistedUsers() {
 		return null;
 	}
-	
+
 	//variable getters
 	public String TokenGet(){
 		return Token;
