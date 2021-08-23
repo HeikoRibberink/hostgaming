@@ -53,7 +53,6 @@ public class BotConfigs {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		System.out.println(ChannelIdGet());
 	}
 
 	//function for converting a file to String form
@@ -125,7 +124,6 @@ public class BotConfigs {
 
 	public long getChannelId() throws IOException {
 		String id = findValue("channel_id", ConfigLines, true);
-		System.out.println(Long.parseLong(id));
 		return Long.parseLong(id);
 	}
 
