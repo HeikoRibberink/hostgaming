@@ -20,36 +20,36 @@ import java.util.Map;
 // hoeft niet persé zo.
 public class BotConfigs {
 
-	private File botConfig, KeyConfig, WhiteList;
-	private BufferedReader configReader, KeyReader, WhitelistReader;
-	private ArrayList<String> ConfigLines, KeyLines, WhiteListLines;
-	private String Token, EventTitle;
-	private long ChannelId, Host;
-	private int InputDelay, MaxInputs, MinVotes;
-	private Map<String, Integer> KeyMappings;
-	private List<Long> WhiteListedUsers;
+	private File botConfig, keyConfig, whiteList;
+	private BufferedReader configReader, keyReader, whitelistReader;
+	private ArrayList<String> configLines, keyLines, whiteListLines;
+	private String token, eventTitle;
+	private long channelId, host;
+	private int inputDelay, maxInputs, minVotes;
+	private Map<String, Integer> keyMappings;
+	private List<Long> whiteListedUsers;
 
 	public BotConfigs(String ConfigLocation) {
 		try {
 			botConfig = new File(ConfigLocation);
 			configReader = new BufferedReader(new FileReader(botConfig));
-			ConfigLines = getLines(configReader);
-			KeyConfig = new File(getKeyPath());
-			KeyReader = new BufferedReader(new FileReader(KeyConfig));
-			KeyLines = getLines(KeyReader);
-			WhiteList = new File(getWhiteListPath());
-			WhitelistReader = new BufferedReader(new FileReader(WhiteList));
-			WhiteListLines = getLines(WhitelistReader);
+			configLines = getLines(configReader);
+			keyConfig = new File(getKeyPath());
+			keyReader = new BufferedReader(new FileReader(keyConfig));
+			keyLines = getLines(keyReader);
+			whiteList = new File(getWhiteListPath());
+			whitelistReader = new BufferedReader(new FileReader(whiteList));
+			whiteListLines = getLines(whitelistReader);
 
-			Token = getToken();
-			EventTitle = getEventTitle();
-			ChannelId = getChannelId();
-			Host = getHost();
-			InputDelay = getInputDelay();
-			MaxInputs = getMaxInputs();
-			MinVotes = getMinVotes();
-			KeyMappings = getKeyMappings();
-			WhiteListedUsers = getWhitelistedUsers();
+			token = getToken();
+			eventTitle = getEventTitle();
+			channelId = getChannelId();
+			host = getHost();
+			inputDelay = getInputDelay();
+			maxInputs = getMaxInputs();
+			minVotes = getMinVotes();
+			keyMappings = getKeyMappings();
+			whiteListedUsers = getWhitelistedUsers();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -109,37 +109,37 @@ public class BotConfigs {
 	}
 
 	public String getKeyPath() throws IOException{
-		String path = findValue("keypath", ConfigLines, false);
+		String path = findValue("keypath", configLines, false);
 		return path;
 	}
 
 	public String getWhiteListPath() throws IOException{
-		String path = findValue("whitelistpath", ConfigLines, false);
+		String path = findValue("whitelistpath", configLines, false);
 		return path;
 	}
 
 	public String getToken() throws IOException {
-		String token = findValue("token", ConfigLines, false);
+		String token = findValue("token", configLines, false);
 		return token;
 	}
 
 	public long getChannelId() throws IOException {
-		String id = findValue("channel_id", ConfigLines, true);
+		String id = findValue("channel_id", configLines, true);
 		return Long.parseLong(id);
 	}
 
 	public int getInputDelay() throws IOException{
-		String delay = findValue("input_delay", ConfigLines, true);
+		String delay = findValue("input_delay", configLines, true);
 		return Integer.parseInt(delay);
 	}
 
 	public int getMaxInputs() throws IOException{
-		String max_inputs = findValue("max_inputs", ConfigLines, true);
+		String max_inputs = findValue("max_inputs", configLines, true);
 		return Integer.parseInt(max_inputs);
 	}
 
 	public int getMinVotes() throws IOException{
-		String min_votes = findValue("min_votes", ConfigLines, true);
+		String min_votes = findValue("min_votes", configLines, true);
 		return Integer.parseInt(min_votes);
 	}
 
@@ -160,39 +160,39 @@ public class BotConfigs {
 	}
 
 	//variable getters
-	public String TokenGet(){
-		return Token;
+	public String tokenGet(){
+		return token;
 	}
 
-	public String EventTitleGet(){
-		return EventTitle;
+	public String eventTitleGet(){
+		return eventTitle;
 	}
 
-	public long ChannelIdGet(){
-		return ChannelId;
+	public long channelIdGet(){
+		return channelId;
 	}
 
-	public long HostGet(){
-		return Host;
+	public long hostGet(){
+		return host;
 	}
 
-	public int InputDelayGet(){
-		return InputDelay;
+	public int inputDelayGet(){
+		return inputDelay;
 	}
 
-	public int MaxInputsGet(){
-		return MaxInputs;
+	public int maxInputsGet(){
+		return maxInputs;
 	}
 
-	public int MinVotesGet(){
-		return MinVotes;
+	public int minVotesGet(){
+		return minVotes;
 	}
 
-	public Map<String, Integer> KeyMappingsGet(){
-		return KeyMappings;
+	public Map<String, Integer> keyMappingsGet(){
+		return keyMappings;
 	}
 
-	public List<Long> WhiteListedUsersGet(){
-		return WhiteListedUsers;
+	public List<Long> whiteListedUsersGet(){
+		return whiteListedUsers;
 	}
 }
