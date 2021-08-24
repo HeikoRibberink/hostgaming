@@ -13,13 +13,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.message.ReactionAddEvent;
+import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
@@ -27,6 +25,7 @@ import discord4j.gateway.intent.Intent;
 import discord4j.gateway.intent.IntentSet;
 import nl.heikoribberink.hostgaming.configloader.BotConfigs;
 import nl.heikoribberink.hostgaming.utils.ConsoleWindow;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -37,8 +36,10 @@ import reactor.core.publisher.Mono;
  */
 public class BotMain {
 	public static void main(String[] args) {
-		// String tests = "C:\\Users\\Gebruiker\\Documents\\overig\\Programmeren\\Java\\Discord\\HostGaming\\hostgaming\\src\\test\\java\\nl\\heikoribberink\\hostgaming";
-		// BotConfigs configs = new BotConfigs(tests + "\\Minecraft.hg.conf", tests + "\\MinecraftKeys.hg.conf", tests + "\\Whitelist.txt");
+		// String tests =
+		// "C:\\Users\\Gebruiker\\Documents\\overig\\Programmeren\\Java\\Discord\\HostGaming\\hostgaming\\src\\test\\java\\nl\\heikoribberink\\hostgaming";
+		// BotConfigs configs = new BotConfigs(tests + "\\Minecraft.hg.conf", tests +
+		// "\\MinecraftKeys.hg.conf", tests + "\\Whitelist.txt");
 		try {
 			start(null);
 		} catch (Exception e) {
@@ -53,7 +54,7 @@ public class BotMain {
 	private static Thread eventThread;
 
 	private static void start(BotConfigs configs) throws Exception {
-		final String token = /*configs.getToken()*/ "ODc3NDY3ODAzMzkxNzY2NTQ5.YRzDkg.lHu3MzOtFTN3peJdgGZ5astta9s";
+		final String token = /* configs.getToken() */ "ODc3NDY3ODAzMzkxNzY2NTQ5.YRzDkg.lHu3MzOtFTN3peJdgGZ5astta9s";
 		final ConsoleWindow console = new ConsoleWindow("Hosted Gaming Bot Console", 24, 120);
 		System.setOut(console.getOut());
 
@@ -71,8 +72,8 @@ public class BotMain {
 
 		eventRunnable = () -> {
 			try {
-				// runVoteEvent(gateway, configs);
-				runReactionEvent(gateway, configs);
+				// activityReactionVote(gateway, configs);
+				activityReactionEventVote(gateway, configs);
 			} catch (InterruptedException | IOException e) {
 				e.printStackTrace();
 			}
@@ -91,20 +92,20 @@ public class BotMain {
 			try {
 				switch (((str = reader.readLine()) != null ? str : "").toLowerCase()) { // Makes sure str is never
 																						// null
-				case "start":
-					start();
-					break;
+					case "start":
+						start();
+						break;
 
-				case "stop":
-					stop();
-					break;
+					case "stop":
+						stop();
+						break;
 
-				case "exit":
-					exit(gateway);
-					break;
+					case "exit":
+						exit(gateway);
+						break;
 
-				default:
-					break;
+					default:
+						break;
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -143,15 +144,29 @@ public class BotMain {
 		}
 	}
 
-	private static void runVoteEvent(final GatewayDiscordClient gateway, final BotConfigs configs)
+	/**
+	 * Runs the activity and chooses the input events to be issued by voting through
+	 * counting all reactions after a specified period of time. Usually
+	 * {@link #activityReactionEventVote(GatewayDiscordClient, BotConfigs)} is
+	 * preferred over this way to run the activity. This function may be faster for
+	 * very large audiences however, although it has not yet been tested and is only
+	 * speculation.
+	 * 
+	 * @param gateway - The {@link GatewayDiscordClient gateway} used for
+	 *                communicating with Discord.
+	 * @param configs - The {@link BotConfigs} configurations.
+	 * @throws InterruptedException Specified by {@link Thread#sleep(long)}.
+	 * @throws IOException          Specified by {@link BotConfigs}.
+	 */
+	private static void activityReactionVote(final GatewayDiscordClient gateway, final BotConfigs configs)
 			throws InterruptedException, IOException {
-		final long channelId = /*configs.getChannelId()*/ 878612609702699022l;
+		final long channelId = /* configs.getChannelId() */ 878612609702699022l;
 		final List<Long> whitelist = null;
 		final Map<String, Integer> keybinds = Map.of("⬆️", KeyEvent.VK_W, "⬇️", KeyEvent.VK_S, "⬅️", KeyEvent.VK_A,
 				"➡️", KeyEvent.VK_D);
 		final List<String> reactions = List.of("⬅️", "⬆️", "⬇️", "➡️");
-		final int maxInputs = /*configs.getMaxInputs()*/ 4, minVotes = /*configs.getMaxInputs()*/ 2;
-		final long delay = /*configs.getInputDelay()*/ 0;
+		final int maxInputs = /* configs.getMaxInputs() */ 4, minVotes = /* configs.getMaxInputs() */ 2;
+		final long delay = /* configs.getInputDelay() */ 0;
 		final Snowflake host = Snowflake.of(465810891997315083l);
 		final String title = "Testing HostedGaming bot.";
 
@@ -180,10 +195,10 @@ public class BotMain {
 		while (IN_EVENT) {
 			Thread.sleep(delay);
 			Message updatedMsg = msg.getClient().getMessageById(msg.getChannelId(), msg.getId()).block();
-			countVotes(updatedMsg, keybinds, whitelist).subscribe(map -> {
+			countVotesImmediate(updatedMsg, keybinds, whitelist).subscribe(map -> {
 				long s = System.currentTimeMillis();
 				Map<String, Long> temp;
-				issueInputs(chooseVotes(temp = transferItemsAndWait(map), maxInputs, minVotes), keybinds, 1000);
+				issueInputs(chooseVotes(temp = transferItemsAndWait(map), maxInputs, minVotes), keybinds);
 				System.out.println(temp.values().toString());
 				System.out.println("issueInputs & chooseVotes & transferItems: " + (System.currentTimeMillis() - s));
 			});
@@ -194,16 +209,30 @@ public class BotMain {
 		}).block();
 	}
 
-	private static void runReactionEvent(final GatewayDiscordClient gateway, final BotConfigs configs) throws InterruptedException, IOException {
-		final long channelId = /*configs.getChannelId()*/ 806105311344853063l;
+	/**
+	 * Runs the activity and chooses the input events to be issued by voting through
+	 * counting all the {@link ReactionAddEvent}s and the
+	 * {@link ReactionRemoveEvent}s.
+	 * 
+	 * @param gateway - The {@link GatewayDiscordClient gateway} used for
+	 *                communicating with Discord.
+	 * @param configs - The {@link BotConfigs} configurations.
+	 * @throws InterruptedException Specified by {@link Thread#sleep(long)}.
+	 * @throws IOException          Specified by {@link BotConfigs}.
+	 */
+
+	private static void activityReactionEventVote(final GatewayDiscordClient gateway, final BotConfigs configs)
+			throws InterruptedException, IOException {
+		final long channelId = /* configs.getChannelId() */ 806105311344853063l;
 		final List<Long> whitelist = null;
 		final Map<String, Integer> keybinds = Map.of("⬆️", KeyEvent.VK_W, "⬇️", KeyEvent.VK_S, "⬅️", KeyEvent.VK_A,
-				"➡️", KeyEvent.VK_D);
-		final List<String> reactions = List.of("⬅️", "⬆️", "⬇️", "➡️");
-		final int maxInputs = /*configs.getMaxInputs()*/ 4, minVotes = /*configs.getMaxInputs()*/ 2;
-		final long delay = /*configs.getInputDelay()*/ 0;
+				"➡️", KeyEvent.VK_D, "🔝", KeyEvent.VK_SPACE);
+		final List<String> reactions = List.of("⬅️", "⬆️", "⬇️", "➡️", "🔝");
+		final int maxInputs = /* configs.getMaxInputs() */ 4, minVotes = /* configs.getMaxInputs() */ 1;
+		final long delay = /* configs.getInputDelay() */ 100;
 		final Snowflake host = Snowflake.of(465810891997315083l);
 		final String title = "Testing HostedGaming bot.";
+		final long selfId = gateway.getRestClient().getSelf().block().id().asLong();
 
 		final MessageChannel msgChannel = (MessageChannel) gateway.getChannelById(Snowflake.of(channelId)).block();
 		final String startupContent = "Starting '" + title + "' hosted by <@" + host.asLong() + ">!";
@@ -220,19 +249,65 @@ public class BotMain {
 			countdown--;
 		}
 		if (IN_EVENT) {
-			msg.edit(msgEdit -> {
-				msgEdit.setContent("**INPUTS**");
-			}).block();
 			for (String reaction : reactions) {
 				msg.addReaction(ReactionEmoji.unicode(reaction)).subscribe();
 			}
+			msg.edit(msgEdit -> {
+				msgEdit.setContent("**INPUTS**");
+			}).block();
 		}
-		ReactionEventHandler subs = new ReactionEventHandler(channelId, keybinds);
-		gateway.on(ReactionAddEvent.class).subscribe(subs);
-		while(IN_EVENT) {
-			Thread.sleep(50);
+		final ConcurrentHashMap<String, Long> votes = new ConcurrentHashMap<String, Long>();
+		Disposable addEvent = gateway.on(ReactionAddEvent.class).filter(event -> {
+			return event.getChannelId().asLong() == channelId;
+		}).filter(event -> {
+			if(event.getUserId().asLong() == selfId) return false;
+			if (whitelist == null)
+				return true;
+			return whitelist.contains(event.getUserId().asLong());
+		}).filter(event -> {
+			return event.getEmoji().asUnicodeEmoji().isPresent();
+		}).filter(event -> {
+			return keybinds.containsKey(event.getEmoji().asUnicodeEmoji().get().getRaw());
+		}).subscribe(event -> {
+			String emoji = event.getEmoji().asUnicodeEmoji().get().getRaw();
+			System.out.println(emoji + " +1");
+			Object count = votes.get(emoji);
+			if (count == null)
+				votes.put(emoji, 1l);
+			else
+				votes.put(emoji, (Long) count + 1);
+		}, error -> {
+			error.printStackTrace();
+		});
+		Disposable removeEvent = gateway.on(ReactionRemoveEvent.class).filter(event -> {
+			return event.getChannelId().asLong() == channelId;
+		}).filter(event -> {
+			if(event.getUserId().asLong() == selfId) return false;
+			if (whitelist == null)
+				return true;
+			return whitelist.contains(event.getUserId().asLong());
+		}).filter(event -> {
+			return event.getEmoji().asUnicodeEmoji().isPresent();
+		}).filter(event -> {
+			return keybinds.containsKey(event.getEmoji().asUnicodeEmoji().get().getRaw());
+		}).subscribe(event -> {
+			String emoji = event.getEmoji().asUnicodeEmoji().get().getRaw();
+			System.out.println(emoji + "-1");
+			Object count = votes.get(emoji);
+			if (count == null)
+				votes.put(emoji, -1l);
+			else
+				votes.put(emoji, (Long) count - 1);
+		}, error -> {
+			error.printStackTrace();
+		});
+		while (IN_EVENT) {
+			Thread.sleep(delay + 0);
+			issueInputs(chooseVotes(votes, maxInputs, minVotes), keybinds);
+			System.out.println(votes);
 		}
-		subs.cancelSubscription();
+		addEvent.dispose();
+		removeEvent.dispose();
 		msg.removeAllReactions().subscribe();
 		msg.edit(msgEdit -> {
 			msgEdit.setContent("**Event has ended!** \n Thanks for participating.");
@@ -240,7 +315,8 @@ public class BotMain {
 	}
 
 	/**
-	 * Counts all reactions per bounded emoji, filtering for whitelisted users.
+	 * Counts all reactions per bounded emoji by reading them from the message,
+	 * filtering for whitelisted users.
 	 * 
 	 * @param msg       - The {@link Message} of which the reactions must be
 	 *                  counted.
@@ -251,7 +327,8 @@ public class BotMain {
 	 *         for whitelisted users.
 	 */
 
-	public static Mono<Map<String, Mono<Long>>> countVotes(Message msg, Map<String, Integer> keybinds, List<Long> whitelist) {
+	private static Mono<Map<String, Mono<Long>>> countVotesImmediate(Message msg, Map<String, Integer> keybinds,
+			List<Long> whitelist) {
 
 		// Retrieve all messages, count and store them per emoji filtering the
 		// whitelisted users.
@@ -276,7 +353,7 @@ public class BotMain {
 		return counts;
 	}
 
-	public static List<String> chooseVotes(Map<String, Long> counts, int maxInputs, int minVotes) {
+	private static List<String> chooseVotes(Map<String, Long> counts, int maxInputs, int minVotes) {
 		List<String> out = new ArrayList<String>();
 		ArrayList<Entry<String, Long>> entries = new ArrayList<Entry<String, Long>>(counts.entrySet());
 		Collections.sort(entries, (a, b) -> {
@@ -294,7 +371,7 @@ public class BotMain {
 		return out;
 	}
 
-	private static void issueInputs(List<String> inputs, Map<String, Integer> keybinds, long length) {
+	private static void issueInputs(List<String> inputs, Map<String, Integer> keybinds) {
 		Thread thread = new Thread(() -> {
 			Robot robot;
 			try {
@@ -312,6 +389,16 @@ public class BotMain {
 		thread.start();
 	}
 
+	/**
+	 * ransfers the items from one map to another by waiting for all the
+	 * {@link Mono} items to complete. Intended for use in combination with
+	 * {@link BotMain#activityReactionVote(GatewayDiscordClient, BotConfigs)}.
+	 * 
+	 * @param in - The Map<String, Mono<Long>> from which to transfer the items
+	 * @return a Map<String, Long> containing all items after waiting for the
+	 *         completed calculations.
+	 */
+
 	private static Map<String, Long> transferItemsAndWait(Map<String, Mono<Long>> in) {
 		ConcurrentHashMap<String, Long> out = new ConcurrentHashMap<String, Long>(in.size());
 		for (Entry<String, Mono<Long>> entry : in.entrySet()) {
@@ -319,7 +406,7 @@ public class BotMain {
 				out.put(entry.getKey(), ctx);
 			});
 		}
-		while(out.size() < in.size()) {
+		while (out.size() < in.size()) {
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
