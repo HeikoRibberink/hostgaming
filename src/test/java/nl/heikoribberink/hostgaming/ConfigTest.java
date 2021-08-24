@@ -10,7 +10,13 @@ public class ConfigTest {
 
     @Test
     public void test() {
-        String id = config.getChannelId();
-        System.out.println(id);
+        System.out.println("token: " + config.getToken());
+        System.out.println("channel id: " + config.getChannelId());
+        System.out.println("input delay: " + config.getInputDelay());
+        System.out.println("max inputs: " + config.getMaxInputs());
+        System.out.println("min votes: " + config.getMinVotes());
+        System.out.println("host: " + config.getHost());
+        System.out.println("event title:" + config.getEventTitle());
+        System.out.println("mode: " + config.getMode());
     }
 }

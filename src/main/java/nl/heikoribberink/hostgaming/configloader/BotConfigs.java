@@ -23,8 +23,8 @@ public class BotConfigs {
 	private File botConfig, keyConfig, whiteList;
 	private BufferedReader configReader, keyReader, whitelistReader;
 	private ArrayList<String> configLines, keyLines, whiteListLines;
-	private String token, eventTitle, mode, channelId;
-	private long host;
+	private String token, eventTitle, mode;
+	private long channelId, host;
 	private int inputDelay, maxInputs, minVotes;
 	private Map<String, Integer> keyMappings;
 	private List<Long> whiteListedUsers;
@@ -34,12 +34,12 @@ public class BotConfigs {
 			botConfig = new File(ConfigLocation);
 			configReader = new BufferedReader(new FileReader(botConfig));
 			configLines = getLines(configReader);
-			//keyConfig = new File(getKeyPath());
-			//keyReader = new BufferedReader(new FileReader(keyConfig));
-			//keyLines = getLines(keyReader);
-			//whiteList = new File(getWhiteListPath());
-			//whitelistReader = new BufferedReader(new FileReader(whiteList));
-			//whiteListLines = getLines(whitelistReader);
+			keyConfig = new File(getKeyPath());
+			keyReader = new BufferedReader(new FileReader(keyConfig));
+			keyLines = getLines(keyReader);
+			whiteList = new File(getWhiteListPath());
+			whitelistReader = new BufferedReader(new FileReader(whiteList));
+			whiteListLines = getLines(whitelistReader);
 
 			setVariables();
 		} catch (IOException e) {
@@ -76,7 +76,7 @@ public class BotConfigs {
 			}
 		}
 		if(ValueIndex != -1){
-			String value = null;	
+			String value = "";	
 			String line = lines.get(ValueIndex);
 			for(int i = 0; i < line.length(); i++){
 				if(mode){
@@ -90,10 +90,10 @@ public class BotConfigs {
 					}
 				}
 			}
-			if(value == null){
+			if(value.equals("")){
 				throw new NullPointerException(ValueName + " found, but no id specified");
 			}
-			return value;
+			return value.trim();
 		}
 		else{
 			throw new NullPointerException("no " + ValueName + " specified");
@@ -102,17 +102,17 @@ public class BotConfigs {
 
 	//function for setting the values of all variables
 	private void setVariables() throws IOException{
-		//token = findValue("token", configLines, false);
-		//eventTitle = findValue("event_title", configLines, false);
-		//mode = findValue("mode", configLines, false);
-		channelId = findValue("channel_id", configLines, false);
-		//inputDelay = Integer.parseInt(findValue("input_delay", configLines, true));
-		//maxInputs = Integer.parseInt(findValue("max_inputs", configLines, true));
-		//minVotes = Integer.parseInt(findValue("min_votes", configLines, true));
-		//host = getHost();
-		//eventTitle = getEventTitle();
-		//keyMappings = getKeyMappings();
-		//whiteListedUsers = getWhitelistedUsers();
+		token = findValue("token", configLines, false);
+		eventTitle = findValue("event_title", configLines, false);
+		channelId = Long.parseLong(findValue("channel_id", configLines, false));
+		inputDelay = Integer.parseInt(findValue("input_delay", configLines, true));
+		maxInputs = Integer.parseInt(findValue("max_inputs", configLines, true));
+		minVotes = Integer.parseInt(findValue("min_votes", configLines, true));
+		host = getHost();
+		eventTitle = findValue("event_title", configLines, false);
+		mode = findValue("mode", configLines, false);
+		keyMappings = getKeyMappings();
+		whiteListedUsers = getWhitelistedUsers();
 	}
 
 	//getters for paths
@@ -131,7 +131,7 @@ public class BotConfigs {
 		return token;
 	}
 
-	public String getChannelId() {
+	public long getChannelId() {
 		return channelId;
 	}
 
@@ -152,7 +152,11 @@ public class BotConfigs {
 	}
 
 	public String getEventTitle() {
-		return null;
+		return eventTitle;
+	}
+
+	public String getMode() {
+		return mode;
 	}
 
 	public Map<String, Integer> getKeyMappings() {
