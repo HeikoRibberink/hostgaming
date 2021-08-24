@@ -416,4 +416,12 @@ public class BotMain {
 		return out;
 	}
 
+	public static boolean getRunning() {
+		return RUNNING;
+	}
+
+	public static boolean getInEvent() {
+		return IN_EVENT;
+	}
+
 }

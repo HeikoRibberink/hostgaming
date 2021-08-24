@@ -16,6 +16,8 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import nl.heikoribberink.hostgaming.BotMain;
+
 /**
  * Used for simplifying the creation and use of virtual consoles using
  * {@link javax.swing.JFrame JFrame}.
@@ -46,7 +48,7 @@ public class ConsoleWindow extends JFrame {
 		setVisible(true);
 		setLocation(new Point(0, 0));
 
-		//Output Text Area with scrolling
+		// Output Text Area with scrolling
 		outputArea = new JTextArea(rows, columns);
 		outputArea.setBackground(Color.black);
 		outputArea.setForeground(Color.green);
@@ -68,7 +70,8 @@ public class ConsoleWindow extends JFrame {
 		AdjustmentListener al = new AdjustmentListener() {
 			@Override
 			public void adjustmentValueChanged(AdjustmentEvent e) {
-				e.getAdjustable().setValue(e.getAdjustable().getMaximum());
+				if (BotMain.getInEvent())
+					e.getAdjustable().setValue(e.getAdjustable().getMaximum());
 			}
 		};
 		scrollPane.getVerticalScrollBar().addAdjustmentListener(al);
