@@ -2,13 +2,11 @@ package nl.heikoribberink.hostgaming.configloader;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-
 /**
  * Class used for loading and storing bot configurations from and to a file.
  * 
@@ -22,45 +20,35 @@ import java.util.Map;
 // hoeft niet persé zo.
 public class BotConfigs {
 
-	File botConfig, KeyConfig, WhiteList;
-	BufferedReader configReader, KeyReader, WhitelistReader;
-	String Token, EventTitle;
-	long ChannelId, Host;
-	int InputDelay, MaxInputs, MinVotes;
-	Map<String, Integer> KeyMappings;
-	List<Long> WhiteListedUsers;
+	private File botConfig, keyConfig, whiteList;
+	private BufferedReader configReader, keyReader, whitelistReader;
+	private ArrayList<String> configLines, keyLines, whiteListLines;
+	private String keyPath, whitelistPath, token, eventTitle;
+	private long channelId, host;
+	private int inputDelay, maxInputs, minVotes;
+	private Map<String, Integer> keyMappings;
+	private List<Long> whiteListedUsers;
 
-	public BotConfigs(String ConfigLocation, String KeyLocation, String WhitelistLocation) {
-		botConfig = new File(ConfigLocation);
-		KeyConfig = new File(KeyLocation);
-		WhiteList = new File(WhitelistLocation);
+	public BotConfigs(String ConfigLocation) {
 		try {
+			botConfig = new File(ConfigLocation);
 			configReader = new BufferedReader(new FileReader(botConfig));
-			KeyReader = new BufferedReader(new FileReader(KeyConfig));
-			WhitelistReader = new BufferedReader(new FileReader(WhiteList));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-		try {
-			Token = getToken();
-			EventTitle = getEventTitle();
-			ChannelId = getChannelId();
-			Host = getHost();
-			InputDelay = getInputDelay();
-			MaxInputs = getMaxInputs();
-			MinVotes = getMinVotes();
-			KeyMappings = getKeyMappings();
-			WhiteListedUsers = getWhitelistedUsers();
+			configLines = getLines(configReader);
+			keyConfig = new File(getKeyPath());
+			keyReader = new BufferedReader(new FileReader(keyConfig));
+			keyLines = getLines(keyReader);
+			whiteList = new File(getWhiteListPath());
+			whitelistReader = new BufferedReader(new FileReader(whiteList));
+			whiteListLines = getLines(whitelistReader);
+
+			setVariables();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	/*
-		general function for getting a value from a file
-		mode == true is for numbers, mode == false is for numbers and characters
-	*/
-	public String findValue(String ValueName, BufferedReader reader, boolean mode) throws IOException{
+	//function for converting a file to String form
+	private ArrayList<String> getLines(BufferedReader reader) throws IOException{
 		ArrayList<String> lines = new ArrayList<String>();
 		while(true){
 			String line = reader.readLine();
@@ -71,18 +59,23 @@ public class BotConfigs {
 				break;
 			}
 		}
-		
-		int ValueIndex = 0;
+		reader.close();
+		return lines;
+	}
+
+	/*
+		general function for getting a value from a file
+		mode == true is for numbers, mode == false is for numbers and characters
+	*/
+	private String findValue(String ValueName, ArrayList<String> lines, boolean mode) throws IOException{		
+		int ValueIndex = -1;
 		for(int i = 0; i < lines.size(); i++){
 			if(lines.get(i).contains(ValueName.toLowerCase())){
-				ValueIndex = i+1;
+				ValueIndex = i;
+				break;
 			}
 		}
-		if(ValueIndex == 0){
-			System.out.println("no " + ValueName + " specified");
-			return null;
-		}
-		else{
+		if(ValueIndex != -1){
 			String value = null;	
 			String line = lines.get(ValueIndex - 1);
 			for(int i = 0; i < line.length(); i++){
@@ -98,42 +91,65 @@ public class BotConfigs {
 				}
 			}
 			if(value == null){
-				System.out.println(ValueName + " found, but no id specified");
+				throw new NullPointerException(ValueName + " found, but no id specified");
 			}
 			return value;
 		}
+		else{
+			throw new NullPointerException("no " + ValueName + " specified");
+		}
 	}
 
-	public String getToken() throws IOException {
-		String token = findValue("token", configReader, false);
+	//function for setting the values of all variables
+	private void setVariables() throws IOException{
+		token = findValue("token", configLines, false);
+		channelId = Long.parseLong(findValue("channel_id", configLines, true));
+		inputDelay = Integer.parseInt(findValue("input_delay", configLines, true));
+		maxInputs = Integer.parseInt(findValue("max_inputs", configLines, true));
+		minVotes = Integer.parseInt(findValue("min_votes", configLines, true));
+		host = getHost();
+		eventTitle = getEventTitle();
+		keyMappings = getKeyMappings();
+		whiteListedUsers = getWhitelistedUsers();
+	}
+
+	//getters for paths
+	private String getKeyPath() throws IOException{
+		String path = findValue("keypath", configLines, false);
+		return path;
+	}
+
+	private String getWhiteListPath() throws IOException{
+		String path = findValue("whitelistpath", configLines, false);
+		return path;
+	}
+
+	//variable getters
+	public String getToken() {
 		return token;
 	}
 
-	public long getChannelId() throws IOException {
-		String id = findValue("channel_id", configReader, true);
-		return Long.parseLong(id);
+	public long getChannelId() {
+		return channelId;
 	}
 
-	public int getInputDelay() throws IOException{
-		String delay = findValue("input_delay", configReader, true);
-		return Integer.parseInt(delay);
+	public int getInputDelay() {
+		return inputDelay;
 	}
 
-	public int getMaxInputs() throws IOException{
-		String max_inputs = findValue("max_inputs", configReader, true);
-		return Integer.parseInt(max_inputs);
+	public int getMaxInputs() {
+		return maxInputs;
 	}
 
-	public int getMinVotes() throws IOException{
-		String min_votes = findValue("min_votes", configReader, true);
-		return Integer.parseInt(min_votes);
+	public int getMinVotes() {
+		return minVotes;
 	}
 
-	public long getHost(){
+	public long getHost() {
 		return 0l;
 	}
 
-	public String getEventTitle(){
+	public String getEventTitle() {
 		return null;
 	}
 
