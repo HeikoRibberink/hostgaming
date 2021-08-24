@@ -13,9 +13,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
+import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
@@ -33,8 +37,8 @@ import reactor.core.publisher.Mono;
  */
 public class BotMain {
 	public static void main(String[] args) {
-		String tests = "C:\\Users\\Gebruiker\\Documents\\overig\\Programmeren\\Java\\Discord\\HostGaming\\hostgaming\\src\\test\\java\\nl\\heikoribberink\\hostgaming";
-		BotConfigs configs = new BotConfigs(tests + "\\Minecraft.hg.conf", tests + "\\MinecraftKeys.hg.conf", tests + "\\Whitelist.txt");
+		// String tests = "C:\\Users\\Gebruiker\\Documents\\overig\\Programmeren\\Java\\Discord\\HostGaming\\hostgaming\\src\\test\\java\\nl\\heikoribberink\\hostgaming";
+		// BotConfigs configs = new BotConfigs(tests + "\\Minecraft.hg.conf", tests + "\\MinecraftKeys.hg.conf", tests + "\\Whitelist.txt");
 		try {
 			start(null);
 		} catch (Exception e) {
@@ -67,7 +71,8 @@ public class BotMain {
 
 		eventRunnable = () -> {
 			try {
-				runEvent(gateway, configs);
+				// runVoteEvent(gateway, configs);
+				runReactionEvent(gateway, configs);
 			} catch (InterruptedException | IOException e) {
 				e.printStackTrace();
 			}
@@ -138,7 +143,7 @@ public class BotMain {
 		}
 	}
 
-	private static void runEvent(final GatewayDiscordClient gateway, final BotConfigs configs)
+	private static void runVoteEvent(final GatewayDiscordClient gateway, final BotConfigs configs)
 			throws InterruptedException, IOException {
 		final long channelId = /*configs.getChannelId()*/ 878612609702699022l;
 		final List<Long> whitelist = null;
@@ -183,6 +188,51 @@ public class BotMain {
 				System.out.println("issueInputs & chooseVotes & transferItems: " + (System.currentTimeMillis() - s));
 			});
 		}
+		msg.removeAllReactions().subscribe();
+		msg.edit(msgEdit -> {
+			msgEdit.setContent("**Event has ended!** \n Thanks for participating.");
+		}).block();
+	}
+
+	private static void runReactionEvent(final GatewayDiscordClient gateway, final BotConfigs configs) throws InterruptedException, IOException {
+		final long channelId = /*configs.getChannelId()*/ 806105311344853063l;
+		final List<Long> whitelist = null;
+		final Map<String, Integer> keybinds = Map.of("⬆️", KeyEvent.VK_W, "⬇️", KeyEvent.VK_S, "⬅️", KeyEvent.VK_A,
+				"➡️", KeyEvent.VK_D);
+		final List<String> reactions = List.of("⬅️", "⬆️", "⬇️", "➡️");
+		final int maxInputs = /*configs.getMaxInputs()*/ 4, minVotes = /*configs.getMaxInputs()*/ 2;
+		final long delay = /*configs.getInputDelay()*/ 0;
+		final Snowflake host = Snowflake.of(465810891997315083l);
+		final String title = "Testing HostedGaming bot.";
+
+		final MessageChannel msgChannel = (MessageChannel) gateway.getChannelById(Snowflake.of(channelId)).block();
+		final String startupContent = "Starting '" + title + "' hosted by <@" + host.asLong() + ">!";
+		final Message msg = msgChannel.createMessage(startupContent).block();
+		System.out.println("Starting countdown.");
+		int countdown = 3;
+		while (IN_EVENT && countdown >= 1) {
+			final int whyisthisnecessary = countdown;
+			msg.edit(msgEdit -> {
+				msgEdit.setContent(startupContent + " \n in " + whyisthisnecessary + " seconds.");
+			}).subscribe();
+			System.out.println("Starting in " + countdown + " seconds.");
+			Thread.sleep(1000);
+			countdown--;
+		}
+		if (IN_EVENT) {
+			msg.edit(msgEdit -> {
+				msgEdit.setContent("**INPUTS**");
+			}).block();
+			for (String reaction : reactions) {
+				msg.addReaction(ReactionEmoji.unicode(reaction)).subscribe();
+			}
+		}
+		ReactionEventHandler subs = new ReactionEventHandler(channelId, keybinds);
+		gateway.on(ReactionAddEvent.class).subscribe(subs);
+		while(IN_EVENT) {
+			Thread.sleep(50);
+		}
+		subs.cancelSubscription();
 		msg.removeAllReactions().subscribe();
 		msg.edit(msgEdit -> {
 			msgEdit.setContent("**Event has ended!** \n Thanks for participating.");
