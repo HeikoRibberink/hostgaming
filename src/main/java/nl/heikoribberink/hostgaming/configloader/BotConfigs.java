@@ -76,16 +76,14 @@ public class BotConfigs {
 		mode == true is for numbers, mode == false is for numbers and characters
 	*/
 	public String findValue(String ValueName, ArrayList<String> lines, boolean mode) throws IOException{		
-		int ValueIndex = 0;
+		int ValueIndex = -1;
 		for(int i = 0; i < lines.size(); i++){
 			if(lines.get(i).contains(ValueName.toLowerCase())){
-				ValueIndex = i+1;
+				ValueIndex = i;
+				break;
 			}
 		}
-		if(ValueIndex == 0){
-			throw new NullPointerException("no " + ValueName + " specified");
-		}
-		else{
+		if(ValueIndex != -1){
 			String value = null;	
 			String line = lines.get(ValueIndex - 1);
 			for(int i = 0; i < line.length(); i++){
@@ -104,6 +102,9 @@ public class BotConfigs {
 				throw new NullPointerException(ValueName + " found, but no id specified");
 			}
 			return value;
+		}
+		else{
+			throw new NullPointerException("no " + ValueName + " specified");
 		}
 	}
 
