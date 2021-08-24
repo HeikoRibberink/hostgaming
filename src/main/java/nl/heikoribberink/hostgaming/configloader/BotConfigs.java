@@ -91,7 +91,7 @@ public class BotConfigs {
 				}
 			}
 			if(value.equals("")){
-				throw new NullPointerException(ValueName + " found, but no id specified");
+				throw new NullPointerException(ValueName + " found, but no value specified");
 			}
 			return value.trim();
 		}
