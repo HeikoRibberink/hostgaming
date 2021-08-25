@@ -15,8 +15,9 @@ public class ConfigTest {
         System.out.println("input delay: " + config.getInputDelay());
         System.out.println("max inputs: " + config.getMaxInputs());
         System.out.println("min votes: " + config.getMinVotes());
-        System.out.println("host: " + config.getHost());
+        System.out.println("host id: " + config.getHost());
         System.out.println("event title:" + config.getEventTitle());
         System.out.println("mode: " + config.getMode());
+        System.out.println("whitelisted users: " + config.getWhitelistedUsers());
     }
 }

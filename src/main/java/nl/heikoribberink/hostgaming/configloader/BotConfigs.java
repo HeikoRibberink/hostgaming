@@ -27,7 +27,7 @@ public class BotConfigs {
 	private long channelId, host;
 	private int inputDelay, maxInputs, minVotes;
 	private Map<String, Integer> keyMappings;
-	private List<Long> whiteListedUsers;
+	private List<Long> whiteListedUsers = new ArrayList<Long>();
 
 	public BotConfigs(String ConfigLocation) {
 		try {
@@ -108,11 +108,13 @@ public class BotConfigs {
 		inputDelay = Integer.parseInt(findValue("input_delay", configLines, true));
 		maxInputs = Integer.parseInt(findValue("max_inputs", configLines, true));
 		minVotes = Integer.parseInt(findValue("min_votes", configLines, true));
-		host = getHost();
+		host = Long.parseLong(findValue("host_id", configLines, true));
 		eventTitle = findValue("event_title", configLines, false);
 		mode = findValue("mode", configLines, false);
-		keyMappings = getKeyMappings();
-		whiteListedUsers = getWhitelistedUsers();
+		
+		for(int i = 0; i < whiteListLines.size(); i++){
+			whiteListedUsers.add(Long.parseLong(whiteListLines.get(i)));
+		}
 	}
 
 	//getters for paths
@@ -148,7 +150,7 @@ public class BotConfigs {
 	}
 
 	public long getHost() {
-		return 0l;
+		return host;
 	}
 
 	public String getEventTitle() {
@@ -164,6 +166,6 @@ public class BotConfigs {
 	}
 
 	public List<Long> getWhitelistedUsers() {
-		return null;
+		return whiteListedUsers;
 	}
 }
