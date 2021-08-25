@@ -23,6 +23,9 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.gateway.intent.Intent;
 import discord4j.gateway.intent.IntentSet;
+import lc.kra.system.keyboard.GlobalKeyboardHook;
+import lc.kra.system.keyboard.event.GlobalKeyAdapter;
+import lc.kra.system.keyboard.event.GlobalKeyEvent;
 import nl.heikoribberink.hostgaming.configloader.BotConfigs;
 import nl.heikoribberink.hostgaming.utils.ConsoleWindow;
 import reactor.core.Disposable;
@@ -70,6 +73,17 @@ public class BotMain {
 			IN_EVENT = false;
 		});
 
+		final GlobalKeyboardHook kHook = new GlobalKeyboardHook();
+		kHook.addKeyListener(new GlobalKeyAdapter() {
+			@Override
+			public void keyPressed(GlobalKeyEvent event) {
+				if (event.getVirtualKeyCode() == GlobalKeyEvent.VK_ESCAPE)
+					IN_EVENT = false;
+			}
+
+		});
+		System.out.println("Started global keyhook for emergency exit key.");
+
 		eventRunnable = () -> {
 			try {
 				// activityReactionVote(gateway, configs);
@@ -81,6 +95,7 @@ public class BotMain {
 
 		RUNNING = true;
 		handleConsole(console, gateway);
+		kHook.shutdownHook();
 
 		console.dispose();
 	}
@@ -90,24 +105,31 @@ public class BotMain {
 		String str;
 		while (RUNNING) {
 			try {
-				switch (((str = reader.readLine()) != null ? str : "").toLowerCase()) { // Makes sure str is never
-																						// null
-					case "start":
-						start();
-						break;
+				str = reader.readLine();
+				if (str != null) {
+					str = str.toLowerCase();
+					System.out.println("[HOST] " + str);
+					switch (str) {
+						case "start":
+							start();
+							break;
 
-					case "stop":
-						stop();
-						break;
+						case "stop":
+							stop();
+							break;
 
-					case "exit":
-						exit(gateway);
-						break;
+						case "exit":
+							exit(gateway);
+							break;
 
-					default:
-						break;
+						default:
+							break;
+					}
 				}
+				Thread.sleep(50);
 			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
@@ -260,7 +282,8 @@ public class BotMain {
 		Disposable addEvent = gateway.on(ReactionAddEvent.class).filter(event -> {
 			return event.getChannelId().asLong() == channelId;
 		}).filter(event -> {
-			if(event.getUserId().asLong() == selfId) return false;
+			if (event.getUserId().asLong() == selfId)
+				return false;
 			if (whitelist == null)
 				return true;
 			return whitelist.contains(event.getUserId().asLong());
@@ -282,7 +305,8 @@ public class BotMain {
 		Disposable removeEvent = gateway.on(ReactionRemoveEvent.class).filter(event -> {
 			return event.getChannelId().asLong() == channelId;
 		}).filter(event -> {
-			if(event.getUserId().asLong() == selfId) return false;
+			if (event.getUserId().asLong() == selfId)
+				return false;
 			if (whitelist == null)
 				return true;
 			return whitelist.contains(event.getUserId().asLong());
@@ -371,19 +395,23 @@ public class BotMain {
 		return out;
 	}
 
+	private static volatile Robot robot;
+
 	private static void issueInputs(List<String> inputs, Map<String, Integer> keybinds) {
-		Thread thread = new Thread(() -> {
-			Robot robot;
+		if (robot == null)
 			try {
 				robot = new Robot();
-				for (Integer key : keybinds.values()) {
-					robot.keyRelease(key);
-				}
-				for (String key : inputs) {
-					robot.keyPress(keybinds.get(key));
-				}
-			} catch (AWTException e) {
-				e.printStackTrace();
+			} catch (AWTException e1) {
+				e1.printStackTrace();
+			}
+		Thread thread = new Thread(() -> {
+			if (!IN_EVENT)
+				return;
+			for (Integer key : keybinds.values()) {
+				robot.keyRelease(key);
+			}
+			for (String key : inputs) {
+				robot.keyPress(keybinds.get(key));
 			}
 		});
 		thread.start();
