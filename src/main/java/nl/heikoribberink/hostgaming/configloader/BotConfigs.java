@@ -22,7 +22,7 @@ public class BotConfigs {
 	private ArrayList<String> configLines, keyLines, whiteListLines;
 	private String token, eventTitle, mode;
 	private long channelId, host;
-	private int inputDelay, maxInputs, minVotes;
+	private int inputDelay, maxInputs, minVotes, exitKey;
 	private Map<String, Integer> keyMappings = new HashMap<String, Integer>();
 	private List<Long> whiteListedUsers = new ArrayList<Long>();
 
@@ -127,6 +127,7 @@ public class BotConfigs {
 		host = Long.parseLong(findValue("host_id", configLines, true));
 		eventTitle = findValue("event_title", configLines, false);
 		mode = findValue("mode", configLines, false);
+		exitKey = Integer.parseInt(findValue("exit_key", configLines, true));
 		
 		for(int i = 0; i < whiteListLines.size(); i++){
 			whiteListedUsers.add(Long.parseLong(whiteListLines.get(i)));
@@ -177,6 +178,10 @@ public class BotConfigs {
 
 	public String getMode() {
 		return mode;
+	}
+
+	public int getExitKey(){
+		return exitKey;
 	}
 
 	public Map<String, Integer> getKeyMappings() {
