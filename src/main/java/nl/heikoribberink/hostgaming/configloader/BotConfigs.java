@@ -15,12 +15,6 @@ import com.vdurmont.emoji.EmojiManager;
  * 
  * @author <a href="https://github.com/MichaPehlivan">Micha Pehlivan</a>
  */
-
-// Deze class moet jij schrijven, Micha. Ik heb alle benodigde functies
-// toegevoegd. Het is de bedoeling dat je de configs van een .hg.conf file leest
-// per game, en dat het readen een van deze objects returned. Ik heb met de
-// Minecraft.hg.conf een voorbeeld van de format van de file gegeven, maar het
-// hoeft niet persé zo.
 public class BotConfigs {
 
 	private File botConfig, keyConfig, whiteList;
@@ -87,10 +81,8 @@ public class BotConfigs {
 						value += line.charAt(i);
 					}
 				}
-				else{
-					if(line.charAt(i) != '=' && i > (line.indexOf(ValueName) + ValueName.length()) ){
-						value += line.charAt(i);
-					}
+				else if(line.charAt(i) != '=' && i > (line.indexOf(ValueName) + ValueName.length())){
+					value += line.charAt(i);
 				}
 			}
 			if(value.equals("")){
@@ -104,7 +96,7 @@ public class BotConfigs {
 	}
 
 	//setting up the keybinds hashmap
-	public void readKeyMappings(){
+	private void readKeyMappings(){
 		for(int i = 0; i < keyLines.size(); i++){
 			String emoji = null;
 			int key = 0;
