@@ -6,7 +6,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
+
+import com.vdurmont.emoji.EmojiManager;
 /**
  * Class used for loading and storing bot configurations from and to a file.
  * 
@@ -26,7 +29,7 @@ public class BotConfigs {
 	private String token, eventTitle, mode;
 	private long channelId, host;
 	private int inputDelay, maxInputs, minVotes;
-	private Map<String, Integer> keyMappings;
+	private Map<String, Integer> keyMappings = new HashMap<String, Integer>();
 	private List<Long> whiteListedUsers = new ArrayList<Long>();
 
 	public BotConfigs(String ConfigLocation) {
@@ -100,6 +103,27 @@ public class BotConfigs {
 		}
 	}
 
+	//setting up the keybinds hashmap
+	public void readKeyMappings(){
+		for(int i = 0; i < keyLines.size(); i++){
+			String emoji = null;
+			int key = 0;
+			for(int j = 0; j < keyLines.get(i).length(); j++){
+				char character = keyLines.get(i).charAt(j);
+				if(EmojiManager.isEmoji(Character.toString(character))){
+					emoji = Character.toString(character);
+				}
+				if(Character.isAlphabetic(character)){
+					key = character;
+				}
+			}
+			if(emoji.equals(null) || key == 0){
+				throw new NullPointerException("emoji and/or key not given");
+			}
+			keyMappings.put(emoji, key);
+		}
+	}
+
 	//function for setting the values of all variables
 	private void setVariables() throws IOException{
 		token = findValue("token", configLines, false);
@@ -115,6 +139,8 @@ public class BotConfigs {
 		for(int i = 0; i < whiteListLines.size(); i++){
 			whiteListedUsers.add(Long.parseLong(whiteListLines.get(i)));
 		}
+
+		readKeyMappings();
 	}
 
 	//getters for paths
@@ -162,7 +188,7 @@ public class BotConfigs {
 	}
 
 	public Map<String, Integer> getKeyMappings() {
-		return null;
+		return keyMappings;
 	}
 
 	public List<Long> getWhitelistedUsers() {
