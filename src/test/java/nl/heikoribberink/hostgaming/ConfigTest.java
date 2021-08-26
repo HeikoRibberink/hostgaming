@@ -2,6 +2,10 @@ package nl.heikoribberink.hostgaming;
 
 import org.junit.Test;
 
+import discord4j.core.event.domain.guild.EmojisUpdateEvent;
+import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.discordjson.json.EmojiData;
+import discord4j.rest.service.EmojiService;
 import nl.heikoribberink.hostgaming.configloader.BotConfigs;
 
 public class ConfigTest {

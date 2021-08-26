@@ -9,7 +9,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.awt.event.KeyEvent;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
 import com.vdurmont.emoji.EmojiManager;
+
+import discord4j.core.object.reaction.ReactionEmoji;
 /**
  * Class used for loading and storing bot configurations from and to a file.
  * 
@@ -95,24 +101,46 @@ public class BotConfigs {
 		}
 	}
 
+	//unicode to keycode conversion
+	private int unicodeToKeyCode(String keyName) throws IllegalArgumentException, IllegalAccessException{
+		String fieldName = "VK_" + keyName;
+		fieldName = fieldName.toUpperCase();
+		Field f;
+		try {
+    		f = KeyEvent.class.getField(fieldName);
+		} catch (NoSuchFieldException e) {
+    		e.printStackTrace();
+    		throw new IllegalArgumentException("Key code is invalid.");
+		}
+		if(f.getModifiers() != (Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)) throw new IllegalArgumentException("Key code is invalid.");
+		return f.getInt(this);
+	}
+
 	//setting up the keybinds hashmap
 	private void readKeyMappings(){
 		for(int i = 0; i < keyLines.size(); i++){
 			String emoji = null;
-			int key = 0;
+			String keyName = "";
+			boolean emojiChecking = true;
 			for(int j = 0; j < keyLines.get(i).length(); j++){
-				char character = keyLines.get(i).charAt(j);
-				if(EmojiManager.isEmoji(Character.toString(character))){
-					emoji = Character.toString(character);
+				char currentChar = keyLines.get(i).charAt(j);
+				if(currentChar == ':'){
+					emojiChecking = false;
 				}
-				if(Character.isAlphabetic(character)){
-					key = character;
+				if(EmojiManager.isEmoji(Character.toString(currentChar)) && emojiChecking){
+					emoji = Character.toString(currentChar);
+				}
+				if(currentChar != ':' && !emojiChecking){
+					keyName += currentChar;
 				}
 			}
-			if(emoji.equals(null) || key == 0){
-				throw new NullPointerException("emoji and/or key not given");
+			try {
+				keyMappings.put(emoji, unicodeToKeyCode(keyName.trim()));
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
 			}
-			keyMappings.put(emoji, key);
 		}
 	}
 
