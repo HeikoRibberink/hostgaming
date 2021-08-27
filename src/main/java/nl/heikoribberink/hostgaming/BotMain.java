@@ -45,8 +45,8 @@ public class BotMain {
 
 		final BotConfigs configs;
 		if(args.length == 1) configs = new BotConfigs(args[0]);
-		// else configs = new BotConfigs("src\\test\\java\\nl\\heikoribberink\\hostgaming\\Minecraft.hg.conf");
-		else configs = new BotConfigs(".hg.conf");
+		else configs = new BotConfigs("src\\test\\java\\nl\\heikoribberink\\hostgaming\\Minecraft.hg.conf");
+		// else configs = new BotConfigs(".hg.conf");
 
 		System.out.println(configs.getKeyMappings());
 
@@ -119,7 +119,7 @@ public class BotMain {
 			try {
 				str = reader.readLine();
 				if (str != null) {
-					str = str.toLowerCase();
+					str = str.toLowerCase().replaceAll("\\s+", "");
 					System.out.println("[HOST] " + str);
 					switch (str) {
 						case "start":
