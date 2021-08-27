@@ -4,6 +4,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 
 import javax.swing.JTextArea;
 
@@ -18,7 +19,7 @@ public class JTextAreaInputStream extends InputStream {
 
 	public JTextAreaInputStream(final JTextArea text) {
 		super();
-		contents = text.getText().getBytes();
+		contents = text.getText().getBytes(Charset.forName("UTF-8"));
 		text.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyReleased(KeyEvent e) {

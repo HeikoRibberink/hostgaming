@@ -35,9 +35,7 @@ public class RobotTest {
 		console.dispose();
 	}
 
-	@Test
-	public void enumTest() throws SecurityException, IllegalArgumentException, IllegalAccessException {
-		String keyName = "b";
+	public int enumTest(String keyName) throws SecurityException, IllegalArgumentException, IllegalAccessException {
 		String fieldName = "VK_" + keyName;
 		fieldName = fieldName.toUpperCase();
 		Field f;
@@ -48,6 +46,11 @@ public class RobotTest {
 			throw new IllegalArgumentException("Key code is invalid.");
 		}
 		if(f.getModifiers() != (Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)) throw new IllegalArgumentException("Key code is invalid.");
-		/*return*/ System.out.println(f.getInt(this));
+		return f.getInt(this);
+	}
+
+	@Test
+	public void debugTest() {
+		System.out.println(KeyEvent.getKeyText(68));
 	}
 }

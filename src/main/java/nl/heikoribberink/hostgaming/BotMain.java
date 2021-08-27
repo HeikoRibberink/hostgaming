@@ -39,12 +39,19 @@ import reactor.core.publisher.Mono;
  */
 public class BotMain {
 	public static void main(String[] args) {
-		// String tests =
-		// "C:\\Users\\Gebruiker\\Documents\\overig\\Programmeren\\Java\\Discord\\HostGaming\\hostgaming\\src\\test\\java\\nl\\heikoribberink\\hostgaming";
-		// BotConfigs configs = new BotConfigs(tests + "\\Minecraft.hg.conf", tests +
-		// "\\MinecraftKeys.hg.conf", tests + "\\Whitelist.txt");
+		final ConsoleWindow console = new ConsoleWindow("Hosted Gaming Bot Console", 24, 120);
+		System.setOut(console.getOut());
+		System.setErr(console.getOut());
+
+		final BotConfigs configs;
+		if(args.length == 1) configs = new BotConfigs(args[0]);
+		// else configs = new BotConfigs("src\\test\\java\\nl\\heikoribberink\\hostgaming\\Minecraft.hg.conf");
+		else configs = new BotConfigs(".hg.conf");
+
+		System.out.println(configs.getKeyMappings());
+
 		try {
-			start(null);
+			start(configs, console);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -56,11 +63,8 @@ public class BotMain {
 	private static Runnable eventRunnable;
 	private static Thread eventThread;
 
-	private static void start(BotConfigs configs) throws Exception {
-		final String token = /* configs.getToken() */ "ODc3NDY3ODAzMzkxNzY2NTQ5.YRzDkg.lHu3MzOtFTN3peJdgGZ5astta9s";
-		final ConsoleWindow console = new ConsoleWindow("Hosted Gaming Bot Console", 24, 120);
-		System.setOut(console.getOut());
-
+	private static void start(final BotConfigs configs, final ConsoleWindow console) throws Exception {
+		final String token = configs.getToken();
 		final DiscordClient client = DiscordClient.create(token);
 		IntentSet intents = IntentSet.of(Intent.GUILD_MESSAGES, Intent.GUILD_MESSAGE_REACTIONS,
 				Intent.GUILD_MESSAGE_TYPING, Intent.DIRECT_MESSAGES, Intent.DIRECT_MESSAGE_REACTIONS);
@@ -69,34 +73,42 @@ public class BotMain {
 		final GatewayDiscordClient gateway = client.login().block();
 
 		gateway.onDisconnect().subscribe(ctx -> {
-			RUNNING = false;
-			IN_EVENT = false;
+			System.out.println("Disconnected.");
+			if(!RUNNING) {
+				return;
+			}
+			stop();
 		});
 
 		final GlobalKeyboardHook kHook = new GlobalKeyboardHook();
+		final int exitKey = configs.getExitKey();
 		kHook.addKeyListener(new GlobalKeyAdapter() {
 			@Override
 			public void keyPressed(GlobalKeyEvent event) {
-				if (event.getVirtualKeyCode() == GlobalKeyEvent.VK_ESCAPE)
-					IN_EVENT = false;
+				if (event.getVirtualKeyCode() == exitKey)
+					stop();
 			}
 
 		});
-		System.out.println("Started global keyhook for emergency exit key.");
+		System.out.format("Starting global keyboard hook for emergency stop key (%s). %n", KeyEvent.getKeyText(exitKey));
 
 		eventRunnable = () -> {
 			try {
 				// activityReactionVote(gateway, configs);
 				activityReactionEventVote(gateway, configs);
+				System.out.println("Activity has ended.");
 			} catch (InterruptedException | IOException e) {
 				e.printStackTrace();
+				System.out.println("Activity has been aborted.");
 			}
 		};
 
 		RUNNING = true;
 		handleConsole(console, gateway);
+		System.out.println("Shutting down global keyboard hook.");
 		kHook.shutdownHook();
 
+		System.out.println("Disposing console.");
 		console.dispose();
 	}
 
@@ -121,6 +133,9 @@ public class BotMain {
 						case "exit":
 							exit(gateway);
 							break;
+						
+						case "help":
+							printHelp();
 
 						default:
 							break;
@@ -140,25 +155,46 @@ public class BotMain {
 		}
 	}
 
-	private static void exit(final GatewayDiscordClient gateway) {
-		if (IN_EVENT)
-			return;
-		RUNNING = false;
-		gateway.logout().subscribe();
+	private static void printHelp() {
+		System.out.println("[-----HELP-----\n" +
+		"| You can start the bot by typing commands in the lowermost text box and pressing 'Enter'. \n" +
+		"| The following commands are currently available: \n" +
+		"| 	start		Starts the activity.\n" +
+		"| 	stop		Stops the activity.\n" +
+		"| 	exit		Closes all connections and stops this program.\n" +
+		"| 	help		Displays this information.\n" +
+		"| For more information, read README.md \n" +
+		"|______________");
 	}
 
-	private static void start() {
-		if (IN_EVENT)
+	private synchronized static void exit(final GatewayDiscordClient gateway) {
+		if (IN_EVENT) {
+			System.out.println("The activity is still running! Stop the activity (by running 'stop') before exiting!");
 			return;
+		}
+		System.out.println("Closing connections and stopping the bot.");
+		RUNNING = false;
+		gateway.logout().block();
+	}
+
+	private synchronized static void start() {
+		System.out.println("Starting activity.");
+		if (IN_EVENT) {
+			System.out.println("The activity is already running, no need to start it again.");
+			return;
+		}
 		IN_EVENT = true;
 		eventThread = new Thread(eventRunnable);
 		eventThread.start();
 	}
 
-	private static void stop() {
-		IN_EVENT = false;
-		if (eventThread == null)
+	private synchronized static void stop() {
+		System.out.println("Stopping activity.");
+		if(!IN_EVENT) {
+			System.out.println("The activity is not currently running.");
 			return;
+		}
+		IN_EVENT = false;
 		try {
 			eventThread.join();
 		} catch (InterruptedException e) {
@@ -182,18 +218,17 @@ public class BotMain {
 	 */
 	private static void activityReactionVote(final GatewayDiscordClient gateway, final BotConfigs configs)
 			throws InterruptedException, IOException {
-		final long channelId = /* configs.getChannelId() */ 878612609702699022l;
-		final List<Long> whitelist = null;
-		final Map<String, Integer> keybinds = Map.of("⬆️", KeyEvent.VK_W, "⬇️", KeyEvent.VK_S, "⬅️", KeyEvent.VK_A,
-				"➡️", KeyEvent.VK_D);
-		final List<String> reactions = List.of("⬅️", "⬆️", "⬇️", "➡️");
-		final int maxInputs = /* configs.getMaxInputs() */ 4, minVotes = /* configs.getMaxInputs() */ 2;
-		final long delay = /* configs.getInputDelay() */ 0;
-		final Snowflake host = Snowflake.of(465810891997315083l);
-		final String title = "Testing HostedGaming bot.";
+		final long channelId = configs.getChannelId();
+		final List<Long> whitelist = configs.getWhitelistedUsers();
+		final Map<String, Integer> keybinds = configs.getKeyMappings();
+		final int maxInputs = configs.getMaxInputs(), minVotes = configs.getMinVotes();
+		final long delay = configs.getInputDelay();
+		final long host = configs.getHost();
+		final String title = configs.getEventTitle();
+		final long selfId = gateway.getRestClient().getSelf().block().id().asLong();
 
 		final MessageChannel msgChannel = (MessageChannel) gateway.getChannelById(Snowflake.of(channelId)).block();
-		final String startupContent = "Starting '" + title + "' hosted by <@" + host.asLong() + ">!";
+		final String startupContent = "Starting '" + title + "' hosted by <@" + host + ">!";
 		final Message msg = msgChannel.createMessage(startupContent).block();
 		System.out.println("Starting countdown.");
 		int countdown = 3;
@@ -202,7 +237,7 @@ public class BotMain {
 			msg.edit(msgEdit -> {
 				msgEdit.setContent(startupContent + " \n in " + whyisthisnecessary + " seconds.");
 			}).subscribe();
-			System.out.println("Starting in " + countdown + " seconds.");
+			System.out.format("Starting in %d seconds. %n", countdown);
 			Thread.sleep(1000);
 			countdown--;
 		}
@@ -210,7 +245,7 @@ public class BotMain {
 			msg.edit(msgEdit -> {
 				msgEdit.setContent("**INPUTS**");
 			}).block();
-			for (String reaction : reactions) {
+			for (String reaction : keybinds.keySet()) {
 				msg.addReaction(ReactionEmoji.unicode(reaction)).subscribe();
 			}
 		}
@@ -221,8 +256,6 @@ public class BotMain {
 				long s = System.currentTimeMillis();
 				Map<String, Long> temp;
 				issueInputs(chooseVotes(temp = transferItemsAndWait(map), maxInputs, minVotes), keybinds);
-				System.out.println(temp.values().toString());
-				System.out.println("issueInputs & chooseVotes & transferItems: " + (System.currentTimeMillis() - s));
 			});
 		}
 		msg.removeAllReactions().subscribe();
@@ -245,19 +278,17 @@ public class BotMain {
 
 	private static void activityReactionEventVote(final GatewayDiscordClient gateway, final BotConfigs configs)
 			throws InterruptedException, IOException {
-		final long channelId = /* configs.getChannelId() */ 806105311344853063l;
-		final List<Long> whitelist = null;
-		final Map<String, Integer> keybinds = Map.of("⬆️", KeyEvent.VK_W, "⬇️", KeyEvent.VK_S, "⬅️", KeyEvent.VK_A,
-				"➡️", KeyEvent.VK_D, "🔝", KeyEvent.VK_SPACE);
-		final List<String> reactions = List.of("⬅️", "⬆️", "⬇️", "➡️", "🔝");
-		final int maxInputs = /* configs.getMaxInputs() */ 4, minVotes = /* configs.getMaxInputs() */ 1;
-		final long delay = /* configs.getInputDelay() */ 100;
-		final Snowflake host = Snowflake.of(465810891997315083l);
-		final String title = "Testing HostedGaming bot.";
+		final long channelId = configs.getChannelId();
+		final List<Long> whitelist = configs.getWhitelistedUsers();
+		final Map<String, Integer> keybinds = configs.getKeyMappings();
+		final int maxInputs = configs.getMaxInputs(), minVotes = configs.getMinVotes();
+		final long delay = configs.getInputDelay();
+		final long host = configs.getHost();
+		final String title = configs.getEventTitle();
 		final long selfId = gateway.getRestClient().getSelf().block().id().asLong();
 
 		final MessageChannel msgChannel = (MessageChannel) gateway.getChannelById(Snowflake.of(channelId)).block();
-		final String startupContent = "Starting '" + title + "' hosted by <@" + host.asLong() + ">!";
+		final String startupContent = "Starting '" + title + "' hosted by <@" + host + ">!";
 		final Message msg = msgChannel.createMessage(startupContent).block();
 		System.out.println("Starting countdown.");
 		int countdown = 3;
@@ -266,12 +297,12 @@ public class BotMain {
 			msg.edit(msgEdit -> {
 				msgEdit.setContent(startupContent + " \n in " + whyisthisnecessary + " seconds.");
 			}).subscribe();
-			System.out.println("Starting in " + countdown + " seconds.");
+			System.out.format("Starting in %d seconds. %n", countdown);
 			Thread.sleep(1000);
 			countdown--;
 		}
 		if (IN_EVENT) {
-			for (String reaction : reactions) {
+			for (String reaction : keybinds.keySet()) {
 				msg.addReaction(ReactionEmoji.unicode(reaction)).subscribe();
 			}
 			msg.edit(msgEdit -> {
@@ -293,7 +324,6 @@ public class BotMain {
 			return keybinds.containsKey(event.getEmoji().asUnicodeEmoji().get().getRaw());
 		}).subscribe(event -> {
 			String emoji = event.getEmoji().asUnicodeEmoji().get().getRaw();
-			System.out.println(emoji + " +1");
 			Object count = votes.get(emoji);
 			if (count == null)
 				votes.put(emoji, 1l);
@@ -316,7 +346,6 @@ public class BotMain {
 			return keybinds.containsKey(event.getEmoji().asUnicodeEmoji().get().getRaw());
 		}).subscribe(event -> {
 			String emoji = event.getEmoji().asUnicodeEmoji().get().getRaw();
-			System.out.println(emoji + "-1");
 			Object count = votes.get(emoji);
 			if (count == null)
 				votes.put(emoji, -1l);
@@ -326,9 +355,8 @@ public class BotMain {
 			error.printStackTrace();
 		});
 		while (IN_EVENT) {
-			Thread.sleep(delay + 0);
+			Thread.sleep(delay);
 			issueInputs(chooseVotes(votes, maxInputs, minVotes), keybinds);
-			System.out.println(votes);
 		}
 		addEvent.dispose();
 		removeEvent.dispose();

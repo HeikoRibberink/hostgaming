@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -56,12 +57,14 @@ public class ConsoleWindow extends JFrame {
 		outputArea.setVisible(true);
 		outputArea.setFocusable(true);
 		outputArea.enableInputMethods(false);
+		outputArea.setLineWrap(true);
+		outputArea.setEditable(false);
 		out = new PrintStream(new OutputStream() {
 			@Override
 			public void write(int b) throws IOException {
 				outputArea.append(String.valueOf((char) b));
 			}
-		});
+		}, true, Charset.forName("UTF-8"));
 
 		scrollPane = new JScrollPane(outputArea);
 		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
