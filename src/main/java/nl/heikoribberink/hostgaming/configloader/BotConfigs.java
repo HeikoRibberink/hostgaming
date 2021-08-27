@@ -129,7 +129,7 @@ public class BotConfigs {
 				if(currentChar == ':'){
 					emojiChecking = false;
 				}
-				if(/*EmojiManager.isEmoji(Character.toString(currentChar)) &&*/ emojiChecking){
+				if(EmojiManager.isEmoji(Character.toString(currentChar)) && emojiChecking){
 					emoji = Character.toString(currentChar);
 				}
 				if(currentChar != ':' && !emojiChecking){
