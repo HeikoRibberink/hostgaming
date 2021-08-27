@@ -121,20 +121,18 @@ public class BotConfigs {
 	private void readKeyMappings(){
 		for(int i = 0; i < keyLines.size(); i++){
 			String line = keyLines.get(i).replaceAll("\\s+", "");
-			String emoji = null;
+			String emoji = "";
 			String keyName = "";
-			boolean emojiChecking = true;
-			for(int j = 0; j < line.length(); j++){
-				char currentChar = line.charAt(j);
-				if(currentChar == ':'){
-					emojiChecking = false;
-				}
-				if(EmojiManager.isEmoji(Character.toString(currentChar)) && emojiChecking){
-					emoji = Character.toString(currentChar);
-				}
-				if(currentChar != ':' && !emojiChecking){
-					keyName += currentChar;
-				}
+			int j;
+			for(j = 0; j < line.length(); j++) {
+				if(line.charAt(j) == ':') break;
+			}
+			emoji = line.substring(0, j);
+			j++;
+			keyName = line.substring(j);
+			if(!EmojiManager.isEmoji(emoji)) {
+				System.out.format("Emoji at line %d is invalid.", i);
+				continue;
 			}
 			try {
 				keyMappings.put(emoji, unicodeToKeyCode(keyName.replaceAll("\\s+", "")));
