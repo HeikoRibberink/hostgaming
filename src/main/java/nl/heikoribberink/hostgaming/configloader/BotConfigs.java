@@ -12,6 +12,7 @@ import java.util.Map;
 import java.awt.event.KeyEvent;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.charset.Charset;
 
 import com.vdurmont.emoji.EmojiManager;
 
@@ -35,13 +36,13 @@ public class BotConfigs {
 	public BotConfigs(String ConfigLocation) {
 		try {
 			botConfig = new File(ConfigLocation);
-			configReader = new BufferedReader(new FileReader(botConfig));
+			configReader = new BufferedReader(new FileReader(botConfig, Charset.forName("UTF-8")));
 			configLines = getLines(configReader);
 			keyConfig = new File(getKeyPath());
-			keyReader = new BufferedReader(new FileReader(keyConfig));
+			keyReader = new BufferedReader(new FileReader(keyConfig, Charset.forName("UTF-8")));
 			keyLines = getLines(keyReader);
 			whiteList = new File(getWhiteListPath());
-			whitelistReader = new BufferedReader(new FileReader(whiteList));
+			whitelistReader = new BufferedReader(new FileReader(whiteList, Charset.forName("UTF-8")));
 			whiteListLines = getLines(whitelistReader);
 
 			setVariables();
