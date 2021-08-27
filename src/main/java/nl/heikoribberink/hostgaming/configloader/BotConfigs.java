@@ -120,15 +120,16 @@ public class BotConfigs {
 	//setting up the keybinds hashmap
 	private void readKeyMappings(){
 		for(int i = 0; i < keyLines.size(); i++){
+			String line = keyLines.get(i).trim();
 			String emoji = null;
 			String keyName = "";
 			boolean emojiChecking = true;
-			for(int j = 0; j < keyLines.get(i).length(); j++){
-				char currentChar = keyLines.get(i).charAt(j);
+			for(int j = 0; j < line.length(); j++){
+				char currentChar = line.charAt(j);
 				if(currentChar == ':'){
 					emojiChecking = false;
 				}
-				if(EmojiManager.isEmoji(Character.toString(currentChar)) && emojiChecking){
+				if(/*EmojiManager.isEmoji(Character.toString(currentChar)) &&*/ emojiChecking){
 					emoji = Character.toString(currentChar);
 				}
 				if(currentChar != ':' && !emojiChecking){
