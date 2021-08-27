@@ -95,7 +95,7 @@ public class BotConfigs {
 			if(value.equals("")){
 				throw new NullPointerException(ValueName + " found, but no value specified");
 			}
-			return value.trim();
+			return value.replaceAll("\\s+", "");
 		}
 		else{
 			throw new NullPointerException("no " + ValueName + " specified");
@@ -120,7 +120,7 @@ public class BotConfigs {
 	//setting up the keybinds hashmap
 	private void readKeyMappings(){
 		for(int i = 0; i < keyLines.size(); i++){
-			String line = keyLines.get(i).trim();
+			String line = keyLines.get(i).replaceAll("\\s+", "");
 			String emoji = null;
 			String keyName = "";
 			boolean emojiChecking = true;
@@ -137,7 +137,7 @@ public class BotConfigs {
 				}
 			}
 			try {
-				keyMappings.put(emoji, unicodeToKeyCode(keyName.trim()));
+				keyMappings.put(emoji, unicodeToKeyCode(keyName.replaceAll("\\s+", "")));
 			} catch (IllegalArgumentException e) {
 				e.printStackTrace();
 			} catch (IllegalAccessException e) {
