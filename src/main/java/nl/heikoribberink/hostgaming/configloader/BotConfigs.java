@@ -6,28 +6,31 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
+
+import java.awt.event.KeyEvent;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
+import com.vdurmont.emoji.EmojiManager;
+
+import discord4j.core.object.reaction.ReactionEmoji;
 /**
  * Class used for loading and storing bot configurations from and to a file.
  * 
  * @author <a href="https://github.com/MichaPehlivan">Micha Pehlivan</a>
  */
-
-// Deze class moet jij schrijven, Micha. Ik heb alle benodigde functies
-// toegevoegd. Het is de bedoeling dat je de configs van een .hg.conf file leest
-// per game, en dat het readen een van deze objects returned. Ik heb met de
-// Minecraft.hg.conf een voorbeeld van de format van de file gegeven, maar het
-// hoeft niet persé zo.
 public class BotConfigs {
 
 	private File botConfig, keyConfig, whiteList;
 	private BufferedReader configReader, keyReader, whitelistReader;
 	private ArrayList<String> configLines, keyLines, whiteListLines;
-	private String keyPath, whitelistPath, token, eventTitle;
+	private String token, eventTitle, mode;
 	private long channelId, host;
-	private int inputDelay, maxInputs, minVotes;
-	private Map<String, Integer> keyMappings;
-	private List<Long> whiteListedUsers;
+	private int inputDelay, maxInputs, minVotes, exitKey;
+	private Map<String, Integer> keyMappings = new HashMap<String, Integer>();
+	private List<Long> whiteListedUsers = new ArrayList<Long>();
 
 	public BotConfigs(String ConfigLocation) {
 		try {
@@ -76,41 +79,89 @@ public class BotConfigs {
 			}
 		}
 		if(ValueIndex != -1){
-			String value = null;	
-			String line = lines.get(ValueIndex - 1);
+			String value = "";	
+			String line = lines.get(ValueIndex);
 			for(int i = 0; i < line.length(); i++){
 				if(mode){
 					if(Character.isDigit(line.charAt(i)) ){
 						value += line.charAt(i);
 					}
 				}
-				else{
-					if(line.charAt(i) != '=' && i > (line.indexOf(ValueName) + ValueName.length()) ){
-						value += line.charAt(i);
-					}
+				else if(line.charAt(i) != '=' && i > (line.indexOf(ValueName) + ValueName.length())){
+					value += line.charAt(i);
 				}
 			}
-			if(value == null){
-				throw new NullPointerException(ValueName + " found, but no id specified");
+			if(value.equals("")){
+				throw new NullPointerException(ValueName + " found, but no value specified");
 			}
-			return value;
+			return value.trim();
 		}
 		else{
 			throw new NullPointerException("no " + ValueName + " specified");
 		}
 	}
 
+	//unicode to keycode conversion
+	private int unicodeToKeyCode(String keyName) throws IllegalArgumentException, IllegalAccessException{
+		String fieldName = "VK_" + keyName;
+		fieldName = fieldName.toUpperCase();
+		Field f;
+		try {
+    		f = KeyEvent.class.getField(fieldName);
+		} catch (NoSuchFieldException e) {
+    		e.printStackTrace();
+    		throw new IllegalArgumentException("Key code is invalid.");
+		}
+		if(f.getModifiers() != (Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL)) throw new IllegalArgumentException("Key code is invalid.");
+		return f.getInt(this);
+	}
+
+	//setting up the keybinds hashmap
+	private void readKeyMappings(){
+		for(int i = 0; i < keyLines.size(); i++){
+			String emoji = null;
+			String keyName = "";
+			boolean emojiChecking = true;
+			for(int j = 0; j < keyLines.get(i).length(); j++){
+				char currentChar = keyLines.get(i).charAt(j);
+				if(currentChar == ':'){
+					emojiChecking = false;
+				}
+				if(EmojiManager.isEmoji(Character.toString(currentChar)) && emojiChecking){
+					emoji = Character.toString(currentChar);
+				}
+				if(currentChar != ':' && !emojiChecking){
+					keyName += currentChar;
+				}
+			}
+			try {
+				keyMappings.put(emoji, unicodeToKeyCode(keyName.trim()));
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	//function for setting the values of all variables
 	private void setVariables() throws IOException{
 		token = findValue("token", configLines, false);
-		channelId = Long.parseLong(findValue("channel_id", configLines, true));
+		eventTitle = findValue("event_title", configLines, false);
+		channelId = Long.parseLong(findValue("channel_id", configLines, false));
 		inputDelay = Integer.parseInt(findValue("input_delay", configLines, true));
 		maxInputs = Integer.parseInt(findValue("max_inputs", configLines, true));
 		minVotes = Integer.parseInt(findValue("min_votes", configLines, true));
-		host = getHost();
-		eventTitle = getEventTitle();
-		keyMappings = getKeyMappings();
-		whiteListedUsers = getWhitelistedUsers();
+		host = Long.parseLong(findValue("host_id", configLines, true));
+		eventTitle = findValue("event_title", configLines, false);
+		mode = findValue("mode", configLines, false);
+		exitKey = Integer.parseInt(findValue("exit_key", configLines, true));
+		
+		for(int i = 0; i < whiteListLines.size(); i++){
+			whiteListedUsers.add(Long.parseLong(whiteListLines.get(i)));
+		}
+
+		readKeyMappings();
 	}
 
 	//getters for paths
@@ -146,18 +197,26 @@ public class BotConfigs {
 	}
 
 	public long getHost() {
-		return 0l;
+		return host;
 	}
 
 	public String getEventTitle() {
-		return null;
+		return eventTitle;
+	}
+
+	public String getMode() {
+		return mode;
+	}
+
+	public int getExitKey(){
+		return exitKey;
 	}
 
 	public Map<String, Integer> getKeyMappings() {
-		return null;
+		return keyMappings;
 	}
 
 	public List<Long> getWhitelistedUsers() {
-		return null;
+		return whiteListedUsers;
 	}
 }
