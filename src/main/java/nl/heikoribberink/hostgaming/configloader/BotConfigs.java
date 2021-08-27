@@ -130,10 +130,10 @@ public class BotConfigs {
 			emoji = line.substring(0, j);
 			j++;
 			keyName = line.substring(j);
-			if(!EmojiManager.isEmoji(emoji)) {
-				System.out.format("Emoji at line %d is invalid.", i);
-				continue;
-			}
+			// if(!EmojiManager.isEmoji(emoji)) {
+			// 	System.out.format("Emoji at line %d is invalid.%n", i);
+			// 	continue;
+			// }
 			try {
 				keyMappings.put(emoji, unicodeToKeyCode(keyName.replaceAll("\\s+", "")));
 			} catch (IllegalArgumentException e) {
