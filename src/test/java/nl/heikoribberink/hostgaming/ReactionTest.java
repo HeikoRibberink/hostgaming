@@ -53,19 +53,17 @@ public class ReactionTest {
 		}).filter(event -> {
 			return event.getChannelId().asLong() == channelId;
 		}).filter(event -> {
-			if (!event.getEmoji().asUnicodeEmoji().isPresent())
-				return false;
-			return event.getEmoji().asUnicodeEmoji().get().getRaw().equals("👍");
-		}).filter(event -> {
 			return event.getEmoji().asUnicodeEmoji().isPresent();
+		}).filter(event -> {
+			return event.getEmoji().asUnicodeEmoji().get().getRaw().equals(thumbsup);
 		}).subscribe(event -> {
-			if (event.getEmoji().asUnicodeEmoji().get().getRaw().equals(thumbsup)) {
-				event.getChannel().subscribe(channel -> {
-					channel.createMessage("Thanks!").subscribe();
-				});
-			}
+			event.getChannel().subscribe(channel -> {
+				channel.createMessage("Thanks <@" + event.getUserId().asString() + ">!").subscribe();
+			});
 		}, error -> error.printStackTrace());
 
 		gateway.onDisconnect().block();
 	}
+
+
 }
